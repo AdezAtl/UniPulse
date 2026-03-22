@@ -1,0 +1,52 @@
+---
+import type { LocalUser } from '../../lib/database.types';
+interface Props { activeNav: string; user: LocalUser | null; }
+const { activeNav, user } = Astro.props;
+const nav = [
+  { href:'/feed',      label:'Feed',        key:'feed',      icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
+  { href:'/resources', label:'Resources',   key:'resources', icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>' },
+  { href:'/news',      label:'Campus News', key:'news',      icon:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a4 4 0 0 1-4 4z"/><line x1="10" y1="7" x2="18" y2="7"/><line x1="10" y1="11" x2="18" y2="11"/></svg>' },
+];
+---
+<div class="sidebar-wrap">
+  <div class="sidebar-brand">
+    <a href="/" class="logo-wrap"><span class="logo-mark">UP</span><span class="logo-text">UniPulse</span></a>
+  </div>
+  <nav class="sidebar-nav-inner">
+    {nav.map(item => (
+      <a href={item.href} class={`nav-item ${activeNav===item.key?'active':''}`}>
+        <span class="nav-icon" set:html={item.icon} />
+        {item.label}
+      </a>
+    ))}
+    {user?.role==='admin' && (
+      <a href="/admin" class={`nav-item ${activeNav==='admin'?'active':''}`}>
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
+        Admin <span class="admin-dot"></span>
+      </a>
+    )}
+  </nav>
+  {user && (
+    <a href={`/profile/${user.username}`} class={`profile-link ${activeNav==='profile'?'active':''}`}>
+      <div class="avatar avatar-lg">{user.avatar_url ? <img src={user.avatar_url} alt="" /> : user.username.charAt(0).toUpperCase()}</div>
+      <div style="min-width:0;overflow:hidden">
+        <div class="truncate" style="font-size:0.875rem;font-weight:500;color:var(--text-1)">@{user.username}</div>
+        <div class="pulse-id">{user.pulse_id}</div>
+      </div>
+    </a>
+  )}
+  <form action="/api/auth/signout" method="POST" style="padding-top:0.25rem">
+    <button type="submit" class="nav-item signout-btn">Sign out</button>
+  </form>
+</div>
+<style>
+.sidebar-wrap { display:flex; flex-direction:column; height:100%; padding:1.25rem 0.875rem; gap:0.25rem; }
+.sidebar-brand { padding:0 0.5rem; margin-bottom:1.25rem; }
+.sidebar-nav-inner { display:flex; flex-direction:column; gap:2px; flex:1; }
+.nav-icon { display:flex; align-items:center; justify-content:center; width:20px; flex-shrink:0; }
+.admin-dot { width:6px; height:6px; border-radius:50%; background:#f59e0b; margin-left:auto; }
+.profile-link { display:flex; align-items:center; gap:0.625rem; padding:0.625rem 0.75rem; border-radius:var(--radius); text-decoration:none; margin-top:auto; transition:background 0.12s; }
+.profile-link:hover, .profile-link.active { background:var(--bg-2); }
+.signout-btn { color:var(--text-3); background:none; border:none; cursor:pointer; font-family:inherit; }
+.signout-btn:hover { color:var(--red); background:var(--red-bg); }
+</style>

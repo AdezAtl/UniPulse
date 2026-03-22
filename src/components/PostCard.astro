@@ -1,0 +1,389 @@
+---
+import type { PostWithMeta } from '../lib/database.types';
+import { formatRelativeTime } from '../lib/utils';
+
+interface Props { post: PostWithMeta; isLiked: boolean; isAdmin: boolean; currentUserId: string; }
+const { post, isLiked, isAdmin, currentUserId } = Astro.props;
+---
+
+<article class={`post-card ${post.is_flagged ? 'is-flagged' : ''}`} data-post-id={post.id}>
+
+  <div class="post-avatar">
+    <a href={`/profile/${post.username}`}>
+      <div class="avatar avatar-lg">
+        {post.avatar_url ? <img src={post.avatar_url} alt="" /> : post.username.charAt(0).toUpperCase()}
+      </div>
+    </a>
+    {post.author_role === 'admin' && <span class="author-dot"></span>}
+  </div>
+
+  <div class="post-body">
+    <header class="post-header">
+      <div class="post-meta">
+        <a href={`/profile/${post.username}`} class="post-username">@{post.username}</a>
+        {post.full_name && <span class="muted">{post.full_name}</span>}
+        <span class="pulse-id">{post.pulse_id}</span>
+      </div>
+      <div class="post-header-right">
+        <time class="hint" datetime={post.created_at}>{formatRelativeTime(post.created_at)}</time>
+
+        {isAdmin && (
+          <div class="admin-menu">
+            <button class="admin-trigger" data-post-id={post.id} aria-label="Admin options" aria-expanded="false">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+              </svg>
+            </button>
+
+            <div class="admin-dropdown" data-dropdown={post.id} hidden>
+              <div class="dropdown-label">Admin controls</div>
+
+              <button class="dropdown-item" data-post-action="flag" data-post-id={post.id} data-flagged={String(post.is_flagged)}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
+                {post.is_flagged ? 'Remove flag' : 'Flag for review'}
+              </button>
+
+              <button class="dropdown-item" data-post-action="edit" data-post-id={post.id} data-content={post.content}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit post
+              </button>
+
+              <div class="dropdown-sep"></div>
+
+              <button class="dropdown-item danger" data-post-action="delete" data-post-id={post.id}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                Delete post
+              </button>
+
+              <a href="/admin?tab=users" class="dropdown-item">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                View in admin
+              </a>
+            </div>
+          </div>
+        )}
+      </div>
+    </header>
+
+    <p class="post-content">{post.content}</p>
+
+    <footer class="post-footer">
+      <button
+        class={`like-btn ${isLiked ? 'liked' : ''}`}
+        data-post-id={post.id}
+        aria-label={isLiked ? 'Unlike' : 'Like'}
+        aria-pressed={String(isLiked)}
+      >
+        <span class="like-icon">{isLiked ? '♥' : '♡'}</span>
+        <span class="like-count">{post.like_count}</span>
+      </button>
+
+      {post.is_flagged && isAdmin && <span class="flagged-chip">⚑ Flagged</span>}
+
+      <span class="post-dept">{post.department} · {post.level}</span>
+    </footer>
+  </div>
+</article>
+
+<!-- Edit modal (one per page, JS-controlled) -->
+<div id="admin-edit-modal" class="modal-overlay" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 style="font-size:.9375rem;font-weight:600">Edit Post</h3>
+      <button id="edit-modal-close" class="btn btn-ghost btn-xs">✕</button>
+    </div>
+    <textarea id="edit-modal-content" maxlength="280" rows="5" class="input" style="resize:none;line-height:1.5;font-size:.875rem" placeholder="Post content…"></textarea>
+    <div style="text-align:right;font-size:.75rem;color:var(--text-3);margin:.25rem 0 1rem">
+      <span id="edit-modal-chars">0</span>/280
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:.5rem">
+      <button id="edit-modal-cancel" class="btn btn-secondary btn-sm">Cancel</button>
+      <button id="edit-modal-save"   class="btn btn-primary  btn-sm">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Like toggle
+  document.querySelectorAll('.like-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const postId = btn.dataset.postId;
+      const liked  = btn.classList.contains('liked');
+      btn.disabled = true;
+
+      const res = await fetch('/api/likes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId, action: liked ? 'unlike' : 'like' }),
+      });
+
+      btn.disabled = false;
+      if (!res.ok) return;
+
+      const icon  = btn.querySelector('.like-icon');
+      const count = btn.querySelector('.like-count');
+      const n     = parseInt(count.textContent ?? '0', 10);
+
+      if (liked) {
+        btn.classList.remove('liked');
+        btn.setAttribute('aria-pressed', 'false');
+        icon.textContent  = '♡';
+        count.textContent = String(Math.max(0, n - 1));
+      } else {
+        btn.classList.add('liked');
+        btn.setAttribute('aria-pressed', 'true');
+        icon.textContent  = '♥';
+        count.textContent = String(n + 1);
+      }
+    });
+  });
+
+  // Admin dropdown
+  document.querySelectorAll('.admin-trigger').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const id = btn.dataset.postId;
+      const dd = document.querySelector(`[data-dropdown="${id}"]`);
+      if (!dd) return;
+      const open = !dd.hidden;
+      document.querySelectorAll('[data-dropdown]').forEach(d => d.hidden = true);
+      dd.hidden = open;
+      btn.setAttribute('aria-expanded', String(!open));
+    });
+  });
+
+  document.addEventListener('click', () => {
+    document.querySelectorAll('[data-dropdown]').forEach(d => d.hidden = true);
+  });
+
+  // Admin actions
+  async function adminAction(action, postId, content) {
+    const res = await fetch('/api/admin/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, postId, content }),
+    });
+    if (res.ok) window.location.reload();
+    else { const { error } = await res.json().catch(() => ({ error: 'Error' })); alert(error); }
+  }
+
+  let pendingEditId = null;
+
+  document.querySelectorAll('[data-post-action]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const { postAction, postId, content, flagged } = btn.dataset;
+
+      if (postAction === 'edit') {
+        pendingEditId = postId;
+        const ta    = document.getElementById('edit-modal-content');
+        const chars = document.getElementById('edit-modal-chars');
+        ta.value          = content ?? '';
+        chars.textContent = String((content ?? '').length);
+        document.getElementById('admin-edit-modal').hidden = false;
+        ta.focus();
+        return;
+      }
+
+      if (postAction === 'flag') {
+        await adminAction(flagged === 'true' ? 'unflag' : 'flag', postId);
+        return;
+      }
+
+      if (confirm('Delete this post?')) await adminAction(postAction, postId);
+    });
+  });
+
+  // Edit modal
+  const editModal = document.getElementById('admin-edit-modal');
+  const editTA    = document.getElementById('edit-modal-content');
+  const editChars = document.getElementById('edit-modal-chars');
+
+  editTA?.addEventListener('input', () => { editChars.textContent = String(editTA.value.length); });
+
+  const closeEdit = () => { editModal.hidden = true; pendingEditId = null; };
+  document.getElementById('edit-modal-close')?.addEventListener('click',  closeEdit);
+  document.getElementById('edit-modal-cancel')?.addEventListener('click', closeEdit);
+  document.getElementById('edit-modal-save')?.addEventListener('click', async () => {
+    if (!pendingEditId) return;
+    const val = editTA.value.trim();
+    if (!val) { alert('Content cannot be empty.'); return; }
+    editModal.hidden = true;
+    await adminAction('edit', pendingEditId, val);
+  });
+</script>
+
+<style>
+  .post-card {
+    display: flex;
+    gap: .75rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    transition: background var(--ease);
+  }
+
+  .post-card:hover         { background: color-mix(in srgb, var(--bg-2) 50%, transparent); }
+  .post-card.is-flagged    { border-left: 2px solid #f59e0b; padding-left: calc(1.25rem - 2px); }
+
+  .post-avatar { position: relative; flex-shrink: 0; }
+
+  .author-dot {
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: #f59e0b;
+    border: 2px solid var(--bg);
+  }
+
+  .post-body { flex: 1; min-width: 0; }
+
+  .post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: .5rem;
+    margin-bottom: .375rem;
+  }
+
+  .post-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .375rem .5rem;
+  }
+
+  .post-username {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .post-username:hover { text-decoration: underline; }
+
+  .post-header-right {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    flex-shrink: 0;
+  }
+
+  .post-content {
+    font-size: .9375rem;
+    color: var(--text);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin-bottom: .625rem;
+  }
+
+  .post-footer {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .like-btn {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-3);
+    font-size: .875rem;
+    padding: 0;
+    transition: color var(--ease);
+  }
+
+  .like-btn:hover { color: #ef4444; }
+  .like-btn.liked  { color: #ef4444; }
+  .like-btn:disabled { cursor: not-allowed; opacity: .5; }
+  .like-icon { font-size: .9375rem; line-height: 1; }
+
+  .flagged-chip {
+    font-size: .75rem;
+    font-weight: 500;
+    color: var(--warn-text);
+  }
+
+  .post-dept {
+    font-size: .75rem;
+    color: var(--text-3);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  /* Admin menu */
+  .admin-menu { position: relative; }
+
+  .admin-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    border-radius: var(--radius-sm);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-3);
+    transition: background var(--ease), color var(--ease);
+  }
+
+  .admin-trigger:hover { background: var(--bg-2); color: var(--text-2); }
+
+  .admin-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    background: var(--bg);
+    border: 1px solid var(--border-2);
+    border-radius: var(--radius-lg);
+    min-width: 175px;
+    z-index: 50;
+    padding: .375rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.1);
+  }
+
+  .admin-dropdown[hidden] { display: none; }
+
+  .dropdown-label {
+    font-size: .65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-3);
+    padding: .375rem .625rem .25rem;
+  }
+
+  .dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    width: 100%;
+    padding: .4375rem .625rem;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: .8125rem;
+    font-family: var(--font);
+    color: var(--text-2);
+    text-decoration: none;
+    transition: background var(--ease), color var(--ease);
+  }
+
+  .dropdown-item:hover        { background: var(--bg-2); color: var(--text); }
+  .dropdown-item.danger       { color: var(--danger-text); }
+  .dropdown-item.danger:hover { background: var(--danger-bg); }
+
+  .dropdown-sep { height: 1px; background: var(--border); margin: .25rem 0; }
+
+  .modal-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+</style>

@@ -1,0 +1,88 @@
+---
+import type { LocalUser } from '../../lib/database.types';
+import { DAILY_POST_LIMIT } from '../../lib/utils';
+interface Props { user: LocalUser; todayCount: number; cooldownSecs: number; }
+const { user, todayCount, cooldownSecs } = Astro.props;
+const remaining  = DAILY_POST_LIMIT - todayCount;
+const atLimit    = remaining <= 0;
+const onCooldown = cooldownSecs > 0;
+---
+<div class="composer-wrap">
+  <div class="composer-row">
+    <div class="avatar avatar-lg shrink-0">
+      {user.avatar_url ? <img src={user.avatar_url} alt="" /> : user.username.charAt(0).toUpperCase()}
+    </div>
+    <div class="flex-1">
+      {atLimit ? (
+        <div class="limit-msg">
+          <span class="limit-icon">⏳</span>
+          <div>
+            <p style="font-size:0.875rem;font-weight:500;color:var(--text-1);margin-bottom:2px">Daily limit reached</p>
+            <p class="muted">You've reached your daily post limit. Come back tomorrow!</p>
+          </div>
+        </div>
+      ) : (
+        <form id="post-form" class="composer-form">
+          <textarea id="post-content" name="content" maxlength="280" rows="3"
+            placeholder={onCooldown ? 'Cooldown active…' : "What's happening on campus?"}
+            disabled={onCooldown} class="composer-textarea" aria-label="Post content"></textarea>
+          <div class="composer-footer">
+            <div>
+              {onCooldown
+                ? <span class="cooldown-badge">⏱ <span id="cooldown-timer"></span></span>
+                : <span class="muted" style="font-size:0.8125rem">Posts today: <strong style="color:var(--text-1)">{todayCount}/{DAILY_POST_LIMIT}</strong></span>
+              }
+            </div>
+            <div class="flex items-center gap-3">
+              <span id="char-counter" class="char-counter">0/280</span>
+              <button type="submit" id="submit-btn" class="btn btn-primary btn-sm" disabled={onCooldown}>Pulse</button>
+            </div>
+          </div>
+          <div id="post-error" class="alert alert-danger" style="margin-top:0.5rem;display:none"></div>
+        </form>
+      )}
+    </div>
+  </div>
+</div>
+<script define:vars={{ cooldownSecs, atLimit }}>
+  if (!atLimit) {
+    const textarea = document.getElementById('post-content');
+    const charEl   = document.getElementById('char-counter');
+    const submitBtn= document.getElementById('submit-btn');
+    const errorEl  = document.getElementById('post-error');
+    textarea?.addEventListener('input', () => {
+      const len = textarea.value.length;
+      charEl.textContent = `${len}/280`;
+      charEl.style.color = len >= 280 ? 'var(--red)' : len >= 250 ? 'var(--amber)' : '';
+    });
+    let remaining = cooldownSecs;
+    function fmt(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+    if (remaining > 0) {
+      const timerEl = document.getElementById('cooldown-timer');
+      timerEl.textContent = fmt(remaining);
+      const tick = setInterval(() => { remaining--; if (remaining<=0) { clearInterval(tick); location.reload(); } else timerEl.textContent=fmt(remaining); }, 1000);
+    }
+    document.getElementById('post-form')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const content = textarea.value.trim();
+      if (!content) return;
+      submitBtn.disabled = true; submitBtn.textContent='...'; errorEl.style.display='none';
+      const res = await fetch('/api/posts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content}) });
+      if (res.ok) { location.reload(); }
+      else { const {error} = await res.json().catch(()=>({error:'Something went wrong.'})); errorEl.textContent=error; errorEl.style.display='block'; submitBtn.disabled=false; submitBtn.textContent='Pulse'; }
+    });
+  }
+</script>
+<style>
+.composer-wrap { border-bottom:1px solid var(--border); padding:1rem; }
+.composer-row  { display:flex; gap:0.875rem; align-items:flex-start; }
+.composer-form { display:flex; flex-direction:column; gap:0.625rem; width:100%; }
+.composer-textarea { width:100%; background:transparent; border:none; outline:none; resize:none; font-size:1rem; color:var(--text-1); font-family:var(--font); line-height:1.6; padding:0.25rem 0; min-height:72px; }
+.composer-textarea::placeholder { color:var(--text-3); }
+.composer-textarea:disabled { opacity:0.5; cursor:not-allowed; }
+.composer-footer { display:flex; justify-content:space-between; align-items:center; padding-top:0.5rem; border-top:1px solid var(--border); }
+.char-counter   { font-family:var(--font-mono); font-size:0.75rem; color:var(--text-3); }
+.cooldown-badge { font-size:0.8125rem; font-weight:500; color:var(--amber); background:var(--amber-bg); padding:0.2rem 0.625rem; border-radius:99px; }
+.limit-msg      { display:flex; align-items:flex-start; gap:0.75rem; padding:0.5rem 0; }
+.limit-icon     { font-size:1.25rem; }
+</style>

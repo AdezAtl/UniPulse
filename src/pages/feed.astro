@@ -1,0 +1,47 @@
+---
+import AppLayout from '../layouts/AppLayout.astro';
+import PostComposer from '../components/feed/PostComposer.astro';
+import PostCard from '../components/PostCard.astro';
+import { fetchFeedPosts, fetchLikedPostIds, getTodayPostCount, getLastPostTime } from '../lib/supabase';
+import { getCooldownRemaining } from '../lib/utils';
+
+const user = Astro.locals.user!;
+
+const [{ data: posts }, likedIds, todayCount, lastPost] = await Promise.all([
+  fetchFeedPosts(),
+  fetchLikedPostIds(user.id),
+  getTodayPostCount(user.id),
+  getLastPostTime(user.id),
+]);
+
+const cooldownSecs = getCooldownRemaining(lastPost);
+const likedSet     = new Set(likedIds);
+---
+
+<AppLayout activeNav="feed" user={user} title="Feed · UniPulse">
+  <div class="feed-header page-header">
+    <h1 class="page-title">The Common Room</h1>
+  </div>
+
+  <PostComposer user={user} todayCount={todayCount} cooldownSecs={cooldownSecs} />
+
+  <div class="posts-list">
+    {!posts || posts.length === 0
+      ? (
+        <div class="empty-state">
+          <p class="empty-icon">▦</p>
+          <p class="empty-title">Nothing here yet</p>
+          <p class="empty-sub">Be the first to post something!</p>
+        </div>
+      )
+      : posts.map(post => (
+        <PostCard
+          post={post}
+          isLiked={likedSet.has(post.id)}
+          isAdmin={Astro.locals.isAdmin}
+          currentUserId={user.id}
+        />
+      ))
+    }
+  </div>
+</AppLayout>

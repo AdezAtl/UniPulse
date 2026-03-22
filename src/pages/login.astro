@@ -1,0 +1,87 @@
+---
+import AuthLayout from '../layouts/AuthLayout.astro';
+const error    = Astro.url.searchParams.get('error');
+const redirect = Astro.url.searchParams.get('redirect') ?? '/feed';
+---
+
+<AuthLayout title="Sign In · UniPulse">
+  <h2 style="font-size:1rem;font-weight:600;margin-bottom:.25rem">Welcome back</h2>
+  <p class="muted" style="margin-bottom:1.5rem">Sign in with your username, email, or Pulse ID.</p>
+
+  {error === 'banned' && (
+    <div class="alert alert-danger" style="margin-bottom:1rem">
+      Your account has been suspended. Contact your campus admin.
+    </div>
+  )}
+  {error === 'unauthorized' && (
+    <div class="alert alert-danger" style="margin-bottom:1rem">
+      You don't have permission to access that page.
+    </div>
+  )}
+
+  <form id="login-form" style="display:flex;flex-direction:column;gap:1rem">
+    <div>
+      <label class="label" for="identifier">Username / Email / Pulse ID</label>
+      <input id="identifier" name="identifier" type="text"
+        placeholder="e.g. john_doe, UP-ABC123, or email@uni.edu"
+        autocomplete="username" required class="input" />
+      <p id="id-hint" class="hint" style="margin-top:.375rem;min-height:1rem"></p>
+    </div>
+
+    <div>
+      <label class="label" for="password">Password</label>
+      <input id="password" name="password" type="password"
+        placeholder="••••••••" autocomplete="current-password" required class="input" />
+    </div>
+
+    <div id="login-error" class="alert alert-danger" hidden></div>
+
+    <button type="submit" id="login-btn" class="btn btn-primary w-full" style="padding:.625rem;margin-top:.25rem">
+      Sign in
+    </button>
+  </form>
+
+  <p class="hint text-center" style="margin-top:1.5rem">
+    New to UniPulse?
+    <a href="/signup" style="color:var(--accent);text-decoration:none;font-weight:500">Create an account</a>
+  </p>
+</AuthLayout>
+
+<script>
+  import { signIn } from '../lib/supabase';
+
+  const identifier = document.getElementById('identifier');
+  const hint       = document.getElementById('id-hint');
+  const errorBox   = document.getElementById('login-error');
+  const btn        = document.getElementById('login-btn');
+
+  identifier?.addEventListener('input', () => {
+    const v = identifier.value.trim();
+    if (v.toUpperCase().startsWith('UP-')) hint.textContent = 'Detected: Pulse ID';
+    else if (v.includes('@'))              hint.textContent = 'Detected: Email address';
+    else if (v.length > 0)                hint.textContent = 'Detected: Username';
+    else                                  hint.textContent = '';
+  });
+
+  document.getElementById('login-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id  = identifier.value.trim();
+    const pwd = document.getElementById('password').value;
+
+    btn.disabled    = true;
+    btn.textContent = 'Signing in…';
+    errorBox.hidden = true;
+
+    const { error } = await signIn(id, pwd);
+
+    if (error) {
+      errorBox.textContent = error;
+      errorBox.hidden      = false;
+      btn.disabled         = false;
+      btn.textContent      = 'Sign in';
+    } else {
+      const p = new URLSearchParams(window.location.search).get('redirect') ?? '/feed';
+      window.location.href = p;
+    }
+  });
+</script>

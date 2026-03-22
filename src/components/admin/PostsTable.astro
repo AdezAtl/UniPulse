@@ -1,0 +1,148 @@
+---
+import type { AdminPostView } from '../../lib/database.types';
+import { formatFullDate, truncate } from '../../lib/utils';
+interface Props { posts: AdminPostView[]; compact?: boolean; }
+const { posts, compact = false } = Astro.props;
+---
+
+{posts.length === 0
+  ? <div class="empty-state"><p class="empty-icon">▦</p><p class="empty-title">No posts to display</p></div>
+  : (
+  <div class="table-scroll card">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Author</th>
+          <th>Content</th>
+          {!compact && <th style="text-align:center">Likes</th>}
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {posts.map(p => (
+          <tr
+            data-post-row
+            data-flagged={String(p.is_flagged)}
+            data-deleted={String(p.is_deleted)}
+            class={p.is_deleted ? 'row-deleted' : p.is_flagged ? 'row-flagged' : ''}
+          >
+            <td>
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:.8125rem;font-weight:500">@{p.username}</span>
+                <code class="pulse-id">{p.pulse_id}</code>
+              </div>
+            </td>
+            <td style="max-width:240px">
+              <span class="hint" data-full={p.content}>
+                {compact ? truncate(p.content, 80) : truncate(p.content, 140)}
+              </span>
+            </td>
+            {!compact && <td style="text-align:center;color:var(--text-2)">{p.like_count}</td>}
+            <td>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">
+                {p.is_deleted  && <span class="badge badge-gray">Deleted</span>}
+                {p.is_flagged && !p.is_deleted && <span class="badge badge-warn">Flagged</span>}
+                {!p.is_deleted && !p.is_flagged && <span class="badge badge-ok">OK</span>}
+                {p.is_banned && <span class="badge badge-danger">Banned author</span>}
+              </div>
+            </td>
+            <td class="hint" style="white-space:nowrap;font-size:.75rem">{formatFullDate(p.created_at)}</td>
+            <td>
+              <div style="display:flex;gap:4px;flex-wrap:wrap">
+                {!p.is_deleted && (
+                  <button class="tbl-btn edit" data-post-action="edit" data-post-id={p.id} data-content={p.content}>Edit</button>
+                )}
+                {!p.is_deleted
+                  ? <button class="tbl-btn delete"  data-post-action="delete"  data-post-id={p.id}>Delete</button>
+                  : <button class="tbl-btn restore" data-post-action="restore" data-post-id={p.id}>Restore</button>
+                }
+                {!p.is_flagged && !p.is_deleted && (
+                  <button class="tbl-btn flag" data-post-action="flag" data-post-id={p.id}>Flag</button>
+                )}
+                {p.is_flagged && (
+                  <button class="tbl-btn unflag" data-post-action="unflag" data-post-id={p.id}>Unflag</button>
+                )}
+              </div>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+
+<!-- Edit modal -->
+<div id="posts-edit-modal" class="modal-overlay" hidden>
+  <div class="modal-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h3 style="font-size:.9375rem;font-weight:600">Edit Post</h3>
+      <button id="pedit-close" class="btn btn-ghost btn-xs">✕</button>
+    </div>
+    <textarea id="pedit-content" maxlength="280" rows="5" class="input" style="resize:none;font-size:.875rem;line-height:1.5"></textarea>
+    <div style="text-align:right;font-size:.75rem;color:var(--text-3);margin:.25rem 0 1rem">
+      <span id="pedit-chars">0</span>/280
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:.5rem">
+      <button id="pedit-cancel" class="btn btn-secondary btn-sm">Cancel</button>
+      <button id="pedit-save"   class="btn btn-primary  btn-sm">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let editingId = null;
+
+  async function postAction(action, postId, content) {
+    const res = await fetch('/api/admin/post', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, postId, content }),
+    });
+    if (res.ok) window.location.reload();
+    else { const { error } = await res.json(); alert(error); }
+  }
+
+  document.querySelectorAll('[data-post-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const { postAction: action, postId, content } = btn.dataset;
+
+      if (action === 'edit') {
+        editingId = postId;
+        const ta = document.getElementById('pedit-content');
+        ta.value = content ?? '';
+        document.getElementById('pedit-chars').textContent = String((content ?? '').length);
+        document.getElementById('posts-edit-modal').hidden = false;
+        ta.focus();
+        return;
+      }
+
+      const msgs = { delete: 'Soft-delete this post?', restore: 'Restore this post?', flag: 'Flag for review?', unflag: 'Remove flag?' };
+      if (confirm(msgs[action] ?? 'Continue?')) {
+        btn.disabled = true;
+        await postAction(action, postId);
+      }
+    });
+  });
+
+  const ta = document.getElementById('pedit-content');
+  ta?.addEventListener('input', () => { document.getElementById('pedit-chars').textContent = String(ta.value.length); });
+
+  const closeModal = () => { document.getElementById('posts-edit-modal').hidden = true; editingId = null; };
+  document.getElementById('pedit-close')?.addEventListener('click',  closeModal);
+  document.getElementById('pedit-cancel')?.addEventListener('click', closeModal);
+  document.getElementById('pedit-save')?.addEventListener('click', async () => {
+    if (!editingId) return;
+    const val = ta.value.trim();
+    if (!val) { alert('Content cannot be empty.'); return; }
+    document.getElementById('posts-edit-modal').hidden = true;
+    await postAction('edit', editingId, val);
+  });
+</script>
+
+<style>
+  .table-scroll { overflow-x: auto; }
+  .row-deleted td  { opacity: .4; }
+  .row-flagged     { background: var(--warn-bg); }
+</style>

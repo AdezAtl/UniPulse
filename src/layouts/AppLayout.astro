@@ -1,0 +1,46 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Sidebar from '../components/feed/Sidebar.astro';
+import RightPanel from '../components/feed/RightPanel.astro';
+import type { LocalUser } from '../lib/database.types';
+interface Props {
+  title?: string;
+  activeNav?: 'feed'|'resources'|'news'|'profile'|'admin';
+  user: LocalUser | null;
+  showRightPanel?: boolean;
+}
+const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
+---
+<BaseLayout title={title}>
+  <div class="app-shell">
+    <aside class="sidebar-col"><Sidebar activeNav={activeNav} user={user} /></aside>
+    <main class="feed-col" id="main-content"><slot /></main>
+    {showRightPanel && <aside class="panel-col"><RightPanel /></aside>}
+  </div>
+  <nav class="mobile-nav">
+    <a href="/feed"      class={`mobile-nav-item ${activeNav==='feed'      ?'active':''}`} aria-label="Feed">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    </a>
+    <a href="/resources" class={`mobile-nav-item ${activeNav==='resources' ?'active':''}`} aria-label="Resources">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    </a>
+    <a href="/news"      class={`mobile-nav-item ${activeNav==='news'      ?'active':''}`} aria-label="News">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a4 4 0 0 1-4 4z"/><line x1="10" y1="7" x2="18" y2="7"/></svg>
+    </a>
+    <a href={`/profile/${user?.username}`} class={`mobile-nav-item ${activeNav==='profile'?'active':''}`} aria-label="Profile">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    </a>
+  </nav>
+</BaseLayout>
+<style>
+.app-shell { display:grid; grid-template-columns:var(--nav-w) minmax(0,1fr) var(--panel-w); max-width:1200px; margin:0 auto; min-height:100dvh; }
+.sidebar-col { position:sticky; top:0; height:100dvh; overflow-y:auto; }
+.feed-col    { border-left:1px solid var(--border); border-right:1px solid var(--border); }
+.panel-col   { position:sticky; top:0; height:100dvh; overflow-y:auto; }
+.mobile-nav  { display:none; position:fixed; bottom:0; left:0; right:0; height:60px; background:var(--bg); border-top:1px solid var(--border); z-index:40; justify-content:space-around; align-items:center; padding:0 1rem; }
+.mobile-nav-item { display:flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:12px; color:var(--text-3); transition:color 0.15s, background 0.15s; }
+.mobile-nav-item.active { color:var(--text-1); }
+.mobile-nav-item:hover { background:var(--bg-2); color:var(--text-2); }
+@media (max-width:1024px) { .app-shell { grid-template-columns:var(--nav-w) minmax(0,1fr); } .panel-col { display:none; } }
+@media (max-width:640px)  { .app-shell { grid-template-columns:1fr; padding-bottom:60px; } .sidebar-col { display:none; } .mobile-nav { display:flex; } .feed-col { border:none; } }
+</style>

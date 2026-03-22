@@ -1,0 +1,131 @@
+---
+import type { User } from '../../lib/database.types';
+import { formatDate } from '../../lib/utils';
+interface Props { users: User[]; currentAdminId: string; }
+const { users, currentAdminId } = Astro.props;
+---
+
+<div class="table-scroll card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>User</th>
+        <th>Pulse ID</th>
+        <th>Dept / Level</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Joined</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {users.map(u => (
+        <tr data-user-row class={u.is_banned ? 'row-banned' : ''}>
+          <td>
+            <div class="user-cell">
+              <div class="avatar avatar-sm">
+                {u.avatar_url ? <img src={u.avatar_url} alt="" /> : u.username.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <div class="cell-name">@{u.username}</div>
+                {u.full_name && <div class="hint">{u.full_name}</div>}
+              </div>
+            </div>
+          </td>
+          <td><code class="pulse-id">{u.pulse_id}</code></td>
+          <td><span class="hint">{u.department} · {u.level}</span></td>
+          <td>
+            <span class={u.role === 'admin' ? 'badge badge-warn' : 'badge badge-gray'}>
+              {u.role === 'admin' ? '◈ Admin' : '◎ User'}
+            </span>
+          </td>
+          <td>
+            <span class={u.is_banned ? 'badge badge-danger' : 'badge badge-ok'}>
+              {u.is_banned ? 'Banned' : 'Active'}
+            </span>
+          </td>
+          <td class="hint" style="white-space:nowrap">{formatDate(u.created_at)}</td>
+          <td>
+            {u.id !== currentAdminId ? (
+              <div class="action-group">
+                {u.role === 'user'
+                  ? <button class="tbl-btn promote" data-action="promote" data-user-id={u.id}>Promote</button>
+                  : <button class="tbl-btn demote"  data-action="demote"  data-user-id={u.id}>Demote</button>
+                }
+                {u.is_banned
+                  ? <button class="tbl-btn unban" data-action="unban" data-user-id={u.id}>Unban</button>
+                  : <button class="tbl-btn ban"   data-action="ban"   data-user-id={u.id}>Ban</button>
+                }
+              </div>
+            ) : (
+              <span class="hint" style="font-style:italic">You</span>
+            )}
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+<!-- Ban modal -->
+<div id="ban-modal" class="modal-overlay" hidden>
+  <div class="modal-box">
+    <h3 style="font-size:.9375rem;font-weight:600;margin-bottom:.375rem">Ban User</h3>
+    <p class="muted" style="margin-bottom:1rem">Optionally provide a reason for this ban.</p>
+    <input id="ban-reason" type="text" placeholder="Reason (optional)" class="input" style="margin-bottom:1rem" />
+    <div style="display:flex;justify-content:flex-end;gap:.5rem">
+      <button id="ban-cancel"  class="btn btn-secondary btn-sm">Cancel</button>
+      <button id="ban-confirm" class="btn btn-danger    btn-sm">Confirm Ban</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let pendingBanId = null;
+
+  async function userAction(action, userId, reason) {
+    const res = await fetch('/api/admin/user', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, targetUserId: userId, reason }),
+    });
+    if (res.ok) window.location.reload();
+    else { const { error } = await res.json(); alert(error); }
+  }
+
+  document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const { action, userId } = btn.dataset;
+      if (action === 'ban') {
+        pendingBanId = userId;
+        document.getElementById('ban-modal').hidden = false;
+        return;
+      }
+      const msgs = { promote: 'Promote this user to admin?', demote: 'Demote this admin to user?', unban: 'Unban this user?' };
+      if (confirm(msgs[action] ?? 'Continue?')) {
+        btn.disabled = true;
+        await userAction(action, userId);
+      }
+    });
+  });
+
+  document.getElementById('ban-cancel')?.addEventListener('click', () => {
+    document.getElementById('ban-modal').hidden = true;
+    pendingBanId = null;
+  });
+
+  document.getElementById('ban-confirm')?.addEventListener('click', async () => {
+    if (!pendingBanId) return;
+    const reason = document.getElementById('ban-reason').value.trim();
+    document.getElementById('ban-modal').hidden = true;
+    await userAction('ban', pendingBanId, reason || undefined);
+  });
+</script>
+
+<style>
+  .table-scroll { overflow-x: auto; }
+  .user-cell    { display: flex; align-items: center; gap: .5rem; }
+  .cell-name    { font-size: .8125rem; font-weight: 500; color: var(--text); }
+  .action-group { display: flex; gap: .375rem; flex-wrap: wrap; }
+  .row-banned td { opacity: .5; }
+</style>

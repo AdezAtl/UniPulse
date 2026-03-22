@@ -1,0 +1,52 @@
+---
+import { fetchNews } from '../../lib/supabase';
+const { data: news } = await fetchNews();
+const latest = news?.slice(0, 3) ?? [];
+---
+<div class="panel-wrap">
+  <div class="search-box">
+    <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="search" placeholder="Search UniPulse…" class="input search-input" disabled title="Coming soon" />
+  </div>
+  {latest.length > 0 && (
+    <div class="panel-card card p-4">
+      <h3 class="panel-title">Campus News</h3>
+      <div class="news-list">
+        {latest.map((item: any) => (
+          <a href="/news" class="news-item">
+            <span class="truncate news-headline">{item.title}</span>
+            <span class="hint" style="white-space:nowrap;flex-shrink:0">{new Date(item.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'})}</span>
+          </a>
+        ))}
+      </div>
+      <a href="/news" class="panel-more">View all news →</a>
+    </div>
+  )}
+  <div class="panel-card card p-4">
+    <h3 class="panel-title">Posting Rules</h3>
+    <ul class="rules-list">
+      <li>Max <strong>5 posts</strong> per day</li>
+      <li><strong>15-minute</strong> cooldown between posts</li>
+      <li>Resets at <strong>midnight</strong> your time</li>
+      <li>Be respectful — this is a shared space</li>
+    </ul>
+  </div>
+  <p class="hint center" style="margin-top:auto;padding-top:0.5rem">UniPulse · Campus Edition</p>
+</div>
+<style>
+.panel-wrap { padding:1.25rem 1rem; display:flex; flex-direction:column; gap:1rem; height:100%; }
+.search-box { position:relative; }
+.search-icon { position:absolute; left:0.75rem; top:50%; transform:translateY(-50%); color:var(--text-3); pointer-events:none; }
+.search-input { padding-left:2.25rem; opacity:0.6; cursor:not-allowed; }
+.panel-title  { font-size:0.875rem; font-weight:600; color:var(--text-1); margin-bottom:0.75rem; }
+.news-list    { display:flex; flex-direction:column; gap:2px; }
+.news-item    { display:flex; justify-content:space-between; align-items:baseline; gap:0.5rem; padding:0.375rem 0.25rem; border-radius:6px; text-decoration:none; transition:background 0.1s; }
+.news-item:hover { background:var(--bg-2); }
+.news-headline { font-size:0.8125rem; color:var(--text-2); }
+.panel-more   { display:block; font-size:0.75rem; color:var(--accent); text-decoration:none; margin-top:0.625rem; }
+.panel-more:hover { text-decoration:underline; }
+.rules-list   { list-style:none; display:flex; flex-direction:column; gap:0.375rem; }
+.rules-list li { font-size:0.75rem; color:var(--text-2); padding-left:0.875rem; position:relative; }
+.rules-list li::before { content:'·'; position:absolute; left:0; color:var(--text-3); }
+.rules-list strong { color:var(--text-1); font-weight:500; }
+</style>

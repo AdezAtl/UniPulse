@@ -1,0 +1,110 @@
+---
+import type { AdminLog } from '../../lib/database.types';
+import { formatRelativeTime } from '../../lib/utils';
+
+interface LogWithAdmin extends AdminLog { admin?: { username: string; pulse_id: string } | null; }
+interface Props { logs: LogWithAdmin[]; compact?: boolean; }
+const { logs, compact = false } = Astro.props;
+
+const meta: Record<string, { label: string; cls: string; icon: string }> = {
+  delete_post:     { label: 'Deleted post',       cls: 'badge-danger', icon: '⊡' },
+  restore_post:    { label: 'Restored post',      cls: 'badge-ok',     icon: '↩' },
+  edit_post:       { label: 'Edited post',        cls: 'badge-gray',   icon: '✎' },
+  flag_post:       { label: 'Flagged post',       cls: 'badge-warn',   icon: '⚑' },
+  unflag_post:     { label: 'Unflagged post',     cls: 'badge-gray',   icon: '⚐' },
+  promote_user:    { label: 'Promoted to admin',  cls: 'badge-warn',   icon: '▲' },
+  demote_user:     { label: 'Demoted to user',    cls: 'badge-gray',   icon: '▼' },
+  ban_user:        { label: 'Banned user',        cls: 'badge-danger', icon: '⊘' },
+  unban_user:      { label: 'Unbanned user',      cls: 'badge-ok',     icon: '✓' },
+  delete_resource: { label: 'Deleted resource',   cls: 'badge-danger', icon: '⊡' },
+  restore_resource:{ label: 'Restored resource',  cls: 'badge-ok',     icon: '↩' },
+  delete_news:     { label: 'Deleted news',       cls: 'badge-danger', icon: '⊡' },
+  edit_resource:   { label: 'Edited resource',    cls: 'badge-gray',   icon: '✎' },
+  edit_news:       { label: 'Edited news',        cls: 'badge-gray',   icon: '✎' },
+};
+---
+
+{logs.length === 0
+  ? <div class="empty-state"><p class="empty-icon">◫</p><p class="empty-title">No activity recorded yet</p></div>
+  : (
+  <div class="log-list">
+    {logs.map(log => {
+      const m = meta[log.action] ?? { label: log.action, cls: 'badge-gray', icon: '·' };
+      return (
+        <div class="log-item">
+          <span class={`badge ${m.cls} log-badge`}>{m.icon}</span>
+          <div class="log-body">
+            <div class="log-title">
+              <span class="log-action">{m.label}</span>
+              <span class="badge badge-gray" style="font-size:.65rem">{log.target_type}</span>
+            </div>
+            <div class="log-meta">
+              By <strong>@{log.admin?.username ?? 'unknown'}</strong>
+              {' · '}<code class="pulse-id">{log.target_id.slice(0, 8)}…</code>
+              {!compact && log.metadata && Object.keys(log.metadata).length > 0 && (
+                <span class="log-extra">
+                  {Object.entries(log.metadata).map(([k, v]) => `${k}: ${String(v).slice(0, 40)}`).join(' · ')}
+                </span>
+              )}
+            </div>
+          </div>
+          <time class="log-time">{formatRelativeTime(log.created_at)}</time>
+        </div>
+      );
+    })}
+  </div>
+)}
+
+<style>
+  .log-list { display: flex; flex-direction: column; gap: 1px; }
+
+  .log-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .625rem;
+    padding: .5rem .625rem;
+    border-radius: var(--radius-sm);
+    transition: background var(--ease);
+  }
+
+  .log-item:hover { background: var(--bg-2); }
+
+  .log-badge { width: 22px; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .log-body  { flex: 1; min-width: 0; }
+
+  .log-title {
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    margin-bottom: 2px;
+    flex-wrap: wrap;
+  }
+
+  .log-action { font-size: .8125rem; font-weight: 500; color: var(--text); }
+
+  .log-meta {
+    font-size: .75rem;
+    color: var(--text-2);
+    line-height: 1.4;
+  }
+
+  .log-meta strong { font-weight: 500; color: var(--text); }
+
+  .log-extra {
+    display: block;
+    margin-top: 2px;
+    font-size: .7rem;
+    color: var(--text-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .log-time {
+    font-size: .7rem;
+    color: var(--text-3);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+</style>

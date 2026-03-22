@@ -1,0 +1,57 @@
+---
+interface Props {
+  label: string;
+  value: number | undefined;
+  color: 'blue'|'purple'|'red'|'teal'|'amber'|'gray'|'green'|'coral';
+  icon: string;
+}
+const { label, value, color, icon } = Astro.props;
+---
+
+<div class={`stat-card stat-${color}`}>
+  <span class="stat-icon">{icon}</span>
+  <span class="stat-value">{value?.toLocaleString() ?? '—'}</span>
+  <span class="stat-label">{label}</span>
+</div>
+
+<style>
+  .stat-card {
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.125rem;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+  }
+
+  .stat-icon  { font-size: 1rem; line-height: 1; margin-bottom: .125rem; }
+  .stat-value { font-size: 1.625rem; font-weight: 600; letter-spacing: -.03em; color: var(--text); }
+  .stat-label { font-size: .6875rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-3); }
+
+  .stat-blue   { background: #eff6ff; }
+  .stat-purple { background: #f5f3ff; }
+  .stat-red    { background: #fef2f2; }
+  .stat-teal   { background: #f0fdf9; }
+  .stat-amber  { background: #fffbeb; }
+  .stat-gray   { background: var(--bg-2); }
+  .stat-green  { background: #f0fdf4; }
+  .stat-coral  { background: #fff7ed; }
+
+  .stat-blue   .stat-icon { color: #3b82f6; }
+  .stat-purple .stat-icon { color: #8b5cf6; }
+  .stat-red    .stat-icon { color: #ef4444; }
+  .stat-teal   .stat-icon { color: #14b8a6; }
+  .stat-amber  .stat-icon { color: #f59e0b; }
+  .stat-gray   .stat-icon { color: var(--text-3); }
+  .stat-green  .stat-icon { color: #22c55e; }
+  .stat-coral  .stat-icon { color: #f97316; }
+
+  @media (prefers-color-scheme: dark) {
+    .stat-blue   { background: #0d1b38; }
+    .stat-purple { background: #1a1040; }
+    .stat-red    { background: #2d0c0c; }
+    .stat-teal   { background: #04201a; }
+    .stat-amber  { background: #1c1500; }
+    .stat-green  { background: #052e16; }
+    .stat-coral  { background: #1e0e00; }
+  }
+</style>
