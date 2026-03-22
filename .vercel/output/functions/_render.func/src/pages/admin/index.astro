@@ -1,0 +1,97 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout title="UniPulse — The Campus Common Room">
+  <div class="landing">
+    <div class="hero">
+      <div class="hero-logo">
+        <span class="logo-mark">UP</span>
+        <span class="hero-name">UniPulse</span>
+      </div>
+      <h1 class="hero-title">The campus common room.</h1>
+      <p class="hero-sub">
+        A high-signal social space built for students.<br />
+        No noise. No real names required.
+      </p>
+      <div class="hero-actions">
+        <a href="/signup" class="btn btn-primary" style="padding:.75rem 2rem;font-size:1rem;border-radius:var(--radius-lg)">Get started</a>
+        <a href="/login"  class="btn btn-secondary" style="padding:.75rem 2rem;font-size:1rem;border-radius:var(--radius-lg)">Sign in</a>
+      </div>
+    </div>
+
+    <div class="features">
+      {[
+        { icon: '▦', title: 'The Common Room',      desc: "Share what's happening. Max 5 posts a day keeps the feed intentional." },
+        { icon: '◎', title: 'Pseudonymous Identity', desc: 'Your Pulse ID is permanent. Your name is optional. You control your identity.' },
+        { icon: '◉', title: 'Campus Resources',     desc: 'Upload PDFs, share links. Everything your cohort needs in one place.' },
+        { icon: '◫', title: 'Official News',        desc: 'Admin-verified campus announcements. No misinformation.' },
+      ].map(f => (
+        <div class="feature-card card">
+          <span class="feature-icon">{f.icon}</span>
+          <h3 class="feature-title">{f.title}</h3>
+          <p class="feature-desc">{f.desc}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .landing {
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 1.5rem;
+    gap: 4rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .hero { text-align: center; }
+
+  .hero-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-name { font-size: 1.5rem; font-weight: 600; color: var(--text); }
+
+  .hero-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: -.03em;
+    margin-bottom: .75rem;
+    line-height: 1.15;
+  }
+
+  .hero-sub {
+    font-size: 1rem;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin-bottom: 2rem;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: .75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .feature-card { padding: 1.25rem; }
+  .feature-icon  { font-size: 1.25rem; color: var(--text-3); display: block; margin-bottom: .625rem; }
+  .feature-title { font-size: .9375rem; font-weight: 600; color: var(--text); margin-bottom: .375rem; }
+  .feature-desc  { font-size: .8125rem; color: var(--text-2); line-height: 1.6; }
+</style>

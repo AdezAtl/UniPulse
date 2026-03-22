@@ -1,0 +1,126 @@
+---
+import AppLayout from '../../layouts/AppLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import { supabase, fetchUserPosts, fetchLikedPostIds } from '../../lib/supabase';
+import { formatDate } from '../../lib/utils';
+
+const { username } = Astro.params;
+const viewer       = Astro.locals.user!;
+const isAdmin      = Astro.locals.isAdmin;
+
+const { data: profileUser } = await supabase
+  .from('users')
+  .select('id,username,pulse_id,full_name,department,level,avatar_url,role,created_at')
+  .eq('username', username!)
+  .single();
+
+if (!profileUser) return Astro.redirect('/feed');
+
+const [{ data: posts }, likedIds] = await Promise.all([
+  fetchUserPosts(profileUser.id),
+  fetchLikedPostIds(viewer.id),
+]);
+
+const likedSet  = new Set(likedIds);
+const isOwnPage = viewer.id === profileUser.id;
+---
+
+<AppLayout activeNav="profile" user={viewer} title={`@${profileUser.username} · UniPulse`}>
+  <div class="profile-header">
+    <div class="profile-avatar-wrap">
+      <div class="avatar avatar-xl">
+        {profileUser.avatar_url
+          ? <img src={profileUser.avatar_url} alt="" />
+          : profileUser.username.charAt(0).toUpperCase()
+        }
+      </div>
+      {profileUser.role === 'admin' && <span class="badge badge-warn profile-role-badge">Admin</span>}
+    </div>
+
+    <div style="flex:1;min-width:0">
+      <div class="profile-name-row">
+        <h1 class="profile-username">@{profileUser.username}</h1>
+        {profileUser.full_name && <span class="muted">{profileUser.full_name}</span>}
+      </div>
+      <div class="profile-meta">
+        <span class="pulse-id">{profileUser.pulse_id}</span>
+        <span class="hint">·</span>
+        <span class="hint">{profileUser.department}</span>
+        <span class="hint">·</span>
+        <span class="hint">{profileUser.level}</span>
+      </div>
+      <p class="hint" style="margin-top:.25rem">Joined {formatDate(profileUser.created_at)}</p>
+    </div>
+
+    {isOwnPage && (
+      <a href="/settings" class="btn btn-secondary btn-sm" style="align-self:flex-start">
+        Edit profile
+      </a>
+    )}
+  </div>
+
+  <div class="posts-divider">
+    <span class="hint">{posts?.length ?? 0} posts</span>
+  </div>
+
+  <div>
+    {!posts || posts.length === 0
+      ? (
+        <div class="empty-state">
+          <p class="empty-icon">▦</p>
+          <p class="empty-title">No posts yet</p>
+          {isOwnPage && <p class="empty-sub">Go share something on the feed!</p>}
+        </div>
+      )
+      : posts.map(post => (
+        <PostCard
+          post={post}
+          isLiked={likedSet.has(post.id)}
+          isAdmin={isAdmin}
+          currentUserId={viewer.id}
+        />
+      ))
+    }
+  </div>
+</AppLayout>
+
+<style>
+  .profile-header {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .profile-avatar-wrap { position: relative; flex-shrink: 0; }
+
+  .profile-role-badge {
+    position: absolute;
+    bottom: -4px; right: -4px;
+  }
+
+  .profile-name-row {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: .5rem;
+    margin-bottom: .375rem;
+  }
+
+  .profile-username { font-size: 1.125rem; font-weight: 600; color: var(--text); }
+
+  .profile-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .375rem;
+    margin-bottom: .25rem;
+  }
+
+  .posts-divider {
+    padding: .625rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-2);
+  }
+</style>
