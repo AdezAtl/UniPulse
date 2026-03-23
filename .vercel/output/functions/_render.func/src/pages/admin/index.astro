@@ -1,97 +1,344 @@
 ---
-import BaseLayout from '../../layouts/BaseLayout.astro';
----
-<BaseLayout title="UniPulse — The Campus Common Room">
-  <div class="landing">
-    <div class="hero">
-      <div class="hero-logo">
-        <span class="logo-mark">UP</span>
-        <span class="hero-name">UniPulse</span>
-      </div>
-      <h1 class="hero-title">The campus common room.</h1>
-      <p class="hero-sub">
-        A high-signal social space built for students.<br />
-        No noise. No real names required.
-      </p>
-      <div class="hero-actions">
-        <a href="/signup" class="btn btn-primary" style="padding:.75rem 2rem;font-size:1rem;border-radius:var(--radius-lg)">Get started</a>
-        <a href="/login"  class="btn btn-secondary" style="padding:.75rem 2rem;font-size:1rem;border-radius:var(--radius-lg)">Sign in</a>
-      </div>
-    </div>
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import StatCard from '../../components/admin/StatCard.astro';
+import UsersTable from '../../components/admin/UsersTable.astro';
+import PostsTable from '../../components/admin/PostsTable.astro';
+import ActivityLog from '../../components/admin/ActivityLog.astro';
+import {
+  fetchAdminStats, fetchAllUsers, fetchAdminPosts,
+  fetchAdminLogs, fetchAdminResources, fetchAdminNews,
+} from '../../lib/supabase';
+import { formatFullDate, formatRelativeTime } from '../../lib/utils';
 
-    <div class="features">
-      {[
-        { icon: '▦', title: 'The Common Room',      desc: "Share what's happening. Max 5 posts a day keeps the feed intentional." },
-        { icon: '◎', title: 'Pseudonymous Identity', desc: 'Your Pulse ID is permanent. Your name is optional. You control your identity.' },
-        { icon: '◉', title: 'Campus Resources',     desc: 'Upload PDFs, share links. Everything your cohort needs in one place.' },
-        { icon: '◫', title: 'Official News',        desc: 'Admin-verified campus announcements. No misinformation.' },
-      ].map(f => (
-        <div class="feature-card card">
-          <span class="feature-icon">{f.icon}</span>
-          <h3 class="feature-title">{f.title}</h3>
-          <p class="feature-desc">{f.desc}</p>
-        </div>
-      ))}
+const user = Astro.locals.user!;
+const tab  = Astro.url.searchParams.get('tab') ?? 'overview';
+
+const [stats, { data: users }, { data: posts }, { data: logs }, { data: resources }, { data: news }] =
+  await Promise.all([
+    fetchAdminStats(),
+    fetchAllUsers(),
+    fetchAdminPosts(),
+    fetchAdminLogs(),
+    fetchAdminResources(),
+    fetchAdminNews(),
+  ]);
+
+const recentUsers = users?.slice(0, 5) ?? [];
+const flaggedPosts = (posts ?? []).filter(p => p.is_flagged && !p.is_deleted);
+const recentPosts  = (posts ?? []).slice(0, 5);
+---
+
+<AdminLayout user={user}>
+
+  <header class="dash-header">
+    <div>
+      <h1 class="dash-title">Admin Dashboard</h1>
+      <p class="muted">Manage users, content, and campus resources.</p>
     </div>
-  </div>
-</BaseLayout>
+    <div class="admin-pill">
+      <span class="live-dot"></span>
+      {user.username}
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    {[
+      { id: 'overview', label: 'Overview'  },
+      { id: 'users',    label: 'Users'     },
+      { id: 'posts',    label: 'Posts',    alert: stats.flaggedPosts > 0 ? stats.flaggedPosts : 0 },
+      { id: 'content',  label: 'Content'   },
+      { id: 'logs',     label: 'Audit Log' },
+    ].map(t => (
+      <a href={`/admin?tab=${t.id}`} class={`tab-link ${tab === t.id ? 'active' : ''}`} role="tab">
+        {t.label}
+        {t.alert ? <span class="tab-alert">{t.alert}</span> : null}
+      </a>
+    ))}
+  </nav>
+
+  <!-- ── OVERVIEW ─────────────────────────────────────────────────────────── -->
+  {tab === 'overview' && (
+    <section class="tab-panel fade-in">
+
+      <!-- Stats -->
+      <div class="stats-grid">
+        <StatCard label="Total Users"   value={stats.totalUsers}     color="blue"   icon="◎" />
+        <StatCard label="Admins"        value={stats.adminCount}     color="purple" icon="◈" />
+        <StatCard label="Banned"        value={stats.bannedCount}    color="red"    icon="⊘" />
+        <StatCard label="Total Posts"   value={stats.totalPosts}     color="teal"   icon="▦" />
+        <StatCard label="Flagged"       value={stats.flaggedPosts}   color="amber"  icon="⚑" />
+        <StatCard label="Deleted"       value={stats.deletedPosts}   color="gray"   icon="⊡" />
+        <StatCard label="Resources"     value={stats.totalResources} color="green"  icon="◉" />
+        <StatCard label="News Articles" value={stats.totalNews}      color="coral"  icon="◫" />
+      </div>
+
+      <!-- Quick actions -->
+      <div class="quick-actions">
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="action-cards">
+          <a href="/admin?tab=users" class="action-card">
+            <span class="action-icon">◎</span>
+            <span class="action-label">Manage Users</span>
+            <span class="action-count">{stats.totalUsers}</span>
+          </a>
+          <a href="/admin?tab=posts" class="action-card">
+            <span class="action-icon" style="color:var(--warn-text)">⚑</span>
+            <span class="action-label">Review Flagged</span>
+            <span class="action-count" style={stats.flaggedPosts > 0 ? 'color:var(--warn-text)' : ''}>{stats.flaggedPosts}</span>
+          </a>
+          <a href="/news" class="action-card">
+            <span class="action-icon" style="color:#22c55e">◫</span>
+            <span class="action-label">Post News</span>
+            <span class="action-count">{stats.totalNews}</span>
+          </a>
+          <a href="/admin?tab=content" class="action-card">
+            <span class="action-icon" style="color:#f97316">◉</span>
+            <span class="action-label">Resources</span>
+            <span class="action-count">{stats.totalResources}</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="overview-split">
+        <!-- Flagged posts -->
+        <div>
+          <h2 class="section-title">
+            Flagged Posts
+            {flaggedPosts.length > 0 && <span class="count-badge">{flaggedPosts.length}</span>}
+          </h2>
+          {flaggedPosts.length === 0
+            ? <p class="empty-msg">No flagged posts — all clear ✓</p>
+            : <PostsTable posts={flaggedPosts} compact />
+          }
+        </div>
+
+        <!-- Recent activity -->
+        <div>
+          <h2 class="section-title">Recent Activity</h2>
+          {(logs ?? []).length === 0
+            ? <p class="empty-msg">No admin actions yet.</p>
+            : <ActivityLog logs={(logs ?? []).slice(0, 8)} compact />
+          }
+        </div>
+      </div>
+
+      <!-- Recent signups -->
+      <div style="margin-top:2rem">
+        <h2 class="section-title">Recent Signups</h2>
+        <div class="recent-users card">
+          {recentUsers.length === 0
+            ? <p class="empty-msg">No users yet.</p>
+            : recentUsers.map((u: any) => (
+              <div class="recent-user-row">
+                <div class="avatar avatar-sm">{u.username.charAt(0).toUpperCase()}</div>
+                <div style="flex:1;min-width:0">
+                  <span style="font-size:.875rem;font-weight:500;color:var(--text)">@{u.username}</span>
+                  <span class="hint" style="margin-left:.5rem">{u.department} · {u.level}</span>
+                </div>
+                <code class="pulse-id">{u.pulse_id}</code>
+                <span class="hint" style="white-space:nowrap">{formatRelativeTime(u.created_at)}</span>
+                <span class={u.role === 'admin' ? 'badge badge-warn' : 'badge badge-gray'}>{u.role}</span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+
+    </section>
+  )}
+
+  <!-- ── USERS ─────────────────────────────────────────────────────────────── -->
+  {tab === 'users' && (
+    <section class="tab-panel fade-in">
+      <div class="panel-toolbar">
+        <h2 class="section-title">All Users <span class="count">({users?.length ?? 0})</span></h2>
+        <input id="user-search" type="search" placeholder="Search username, Pulse ID…" class="toolbar-search" />
+      </div>
+      <UsersTable users={users ?? []} currentAdminId={user.id} />
+    </section>
+  )}
+
+  <!-- ── POSTS ──────────────────────────────────────────────────────────────── -->
+  {tab === 'posts' && (
+    <section class="tab-panel fade-in">
+      <div class="panel-toolbar">
+        <h2 class="section-title">All Posts <span class="count">({posts?.length ?? 0})</span></h2>
+        <div class="filter-group">
+          <button class="filter-btn active" data-filter="all">All</button>
+          <button class="filter-btn" data-filter="flagged">
+            Flagged
+            {stats.flaggedPosts > 0 && <span class="tab-alert" style="margin-left:4px">{stats.flaggedPosts}</span>}
+          </button>
+          <button class="filter-btn" data-filter="deleted">Deleted</button>
+        </div>
+      </div>
+      <PostsTable posts={posts ?? []} />
+    </section>
+  )}
+
+  <!-- ── CONTENT ────────────────────────────────────────────────────────────── -->
+  {tab === 'content' && (
+    <section class="tab-panel fade-in">
+      <div class="content-split">
+        <div>
+          <h2 class="section-title">Resources <span class="count">({resources?.length ?? 0})</span></h2>
+          {!resources || resources.length === 0
+            ? <p class="empty-msg">No resources uploaded yet.</p>
+            : (
+            <div class="content-list card">
+              {resources.map((r: any) => (
+                <div class={`content-row ${r.is_deleted ? 'content-row-deleted' : ''}`}>
+                  <div class="content-info">
+                    <span class="content-title">{r.title}</span>
+                    <span class="hint" style="font-size:.75rem">@{r.uploader?.username} · {formatFullDate(r.created_at)}</span>
+                    {r.is_deleted && <span class="badge badge-gray">Deleted</span>}
+                  </div>
+                  <div>
+                    {!r.is_deleted
+                      ? <button class="tbl-btn delete" data-content-action="delete" data-type="resource" data-id={r.id}>Delete</button>
+                      : <button class="tbl-btn restore" data-content-action="restore" data-type="resource" data-id={r.id}>Restore</button>
+                    }
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div>
+          <h2 class="section-title">News Articles <span class="count">({news?.length ?? 0})</span></h2>
+          {!news || news.length === 0
+            ? <p class="empty-msg">No news published yet.</p>
+            : (
+            <div class="content-list card">
+              {news.map((n: any) => (
+                <div class={`content-row ${n.is_deleted ? 'content-row-deleted' : ''}`}>
+                  <div class="content-info">
+                    <span class="content-title">{n.title}</span>
+                    <span class="hint" style="font-size:.75rem">@{n.author?.username} · {formatFullDate(n.created_at)}</span>
+                    {n.is_deleted && <span class="badge badge-gray">Deleted</span>}
+                  </div>
+                  <div>
+                    {!n.is_deleted
+                      ? <button class="tbl-btn delete" data-content-action="delete" data-type="news" data-id={n.id}>Delete</button>
+                      : <button class="tbl-btn restore" data-content-action="restore" data-type="news" data-id={n.id}>Restore</button>
+                    }
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <!-- ── LOGS ───────────────────────────────────────────────────────────────── -->
+  {tab === 'logs' && (
+    <section class="tab-panel fade-in">
+      <div class="panel-toolbar">
+        <h2 class="section-title">Audit Log <span class="count">({logs?.length ?? 0} entries)</span></h2>
+        <p class="muted" style="font-size:.8125rem">Every admin action is permanently recorded here.</p>
+      </div>
+      {(logs ?? []).length === 0
+        ? <p class="empty-msg">No admin actions have been taken yet.</p>
+        : <ActivityLog logs={logs ?? []} />
+      }
+    </section>
+  )}
+
+</AdminLayout>
+
+<script>
+  document.getElementById('user-search')?.addEventListener('input', (e) => {
+    const q = (e.target as HTMLInputElement).value.toLowerCase();
+    document.querySelectorAll<HTMLTableRowElement>('[data-user-row]').forEach(row => {
+      row.style.display = (row.textContent?.toLowerCase().includes(q)) ? '' : 'none';
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.dataset.filter;
+      document.querySelectorAll<HTMLTableRowElement>('[data-post-row]').forEach(row => {
+        if (f === 'all')     row.style.display = '';
+        else if (f === 'flagged') row.style.display = row.dataset.flagged === 'true' && row.dataset.deleted !== 'true' ? '' : 'none';
+        else if (f === 'deleted') row.style.display = row.dataset.deleted === 'true' ? '' : 'none';
+      });
+    });
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-content-action]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const { contentAction: action, type, id } = btn.dataset as Record<string,string>;
+      if (!confirm(`${action === 'delete' ? 'Delete' : 'Restore'} this ${type}?`)) return;
+      btn.disabled = true;
+      const res = await fetch('/api/admin/content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, type, itemId: id }),
+      });
+      if (res.ok) window.location.reload();
+      else { const { error } = await res.json(); alert(error); btn.disabled = false; }
+    });
+  });
+</script>
 
 <style>
-  .landing {
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem 1.5rem;
-    gap: 4rem;
-    max-width: 900px;
-    margin: 0 auto;
-  }
+  .dash-header { display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.75rem;gap:1rem;flex-wrap:wrap; }
+  .dash-title  { font-size:1.25rem;font-weight:600;color:var(--text);letter-spacing:-.02em;margin-bottom:.25rem; }
+  .admin-pill  { display:flex;align-items:center;gap:.5rem;font-size:.8125rem;font-weight:500;color:var(--text-2);background:var(--bg-2);border:1px solid var(--border);padding:.375rem .875rem;border-radius:var(--radius-full); }
+  .live-dot    { width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulseSoft 2s ease-in-out infinite; }
 
-  .hero { text-align: center; }
+  .tabs { display:flex;border-bottom:1px solid var(--border);margin-bottom:1.5rem;overflow-x:auto;scrollbar-width:none;gap:0; }
+  .tabs::-webkit-scrollbar { display:none; }
+  .tab-link { display:flex;align-items:center;gap:.375rem;padding:.625rem 1rem;font-size:.875rem;font-weight:500;text-decoration:none;color:var(--text-2);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color var(--ease),border-color var(--ease); }
+  .tab-link:hover { color:var(--text); }
+  .tab-link.active { color:var(--text);border-bottom-color:var(--text); }
+  .tab-alert { background:#ef4444;color:#fff;font-size:.625rem;font-weight:700;padding:1px 5px;border-radius:var(--radius-full);line-height:1.4; }
 
-  .hero-logo {
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    margin-bottom: 1.5rem;
-  }
+  .stats-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.875rem;margin-bottom:2rem; }
 
-  .hero-name { font-size: 1.5rem; font-weight: 600; color: var(--text); }
+  /* Quick actions */
+  .quick-actions { margin-bottom:2rem; }
+  .action-cards  { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.75rem;margin-top:.75rem; }
+  .action-card   { display:flex;flex-direction:column;gap:.375rem;padding:1rem 1.125rem;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);text-decoration:none;transition:border-color var(--ease),box-shadow var(--ease); }
+  .action-card:hover { border-color:var(--border-2);box-shadow:0 2px 8px rgba(0,0,0,.06); }
+  .action-icon  { font-size:1.25rem;color:var(--text-2); }
+  .action-label { font-size:.875rem;font-weight:500;color:var(--text); }
+  .action-count { font-size:1.25rem;font-weight:600;color:var(--text-2);letter-spacing:-.02em; }
 
-  .hero-title {
-    font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 600;
-    color: var(--text);
-    letter-spacing: -.03em;
-    margin-bottom: .75rem;
-    line-height: 1.15;
-  }
+  .count-badge { display:inline-flex;align-items:center;justify-content:center;background:#ef4444;color:#fff;font-size:.65rem;font-weight:700;width:18px;height:18px;border-radius:50%;margin-left:.5rem;vertical-align:middle; }
 
-  .hero-sub {
-    font-size: 1rem;
-    color: var(--text-2);
-    line-height: 1.7;
-    margin-bottom: 2rem;
-  }
+  .overview-split { display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-top:2rem; }
+  @media(max-width:768px) { .overview-split { grid-template-columns:1fr; } }
 
-  .hero-actions {
-    display: flex;
-    gap: .75rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
+  /* Recent users */
+  .recent-users { overflow:hidden; }
+  .recent-user-row { display:flex;align-items:center;gap:.75rem;padding:.625rem 1rem;border-bottom:1px solid var(--border);transition:background var(--ease); }
+  .recent-user-row:last-child { border-bottom:none; }
+  .recent-user-row:hover { background:var(--bg-2); }
 
-  .features {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-    gap: 1rem;
-    width: 100%;
-  }
+  .panel-toolbar { display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem;margin-bottom:1rem; }
+  .section-title { font-size:.9375rem;font-weight:600;color:var(--text);margin-bottom:.875rem; }
+  .count { font-weight:400;color:var(--text-3); }
+  .toolbar-search { background:var(--bg);border:1px solid var(--border-2);border-radius:var(--radius-md);padding:.375rem .75rem;font-family:var(--font);font-size:.8125rem;color:var(--text);outline:none;width:240px;transition:border-color var(--ease); }
+  .toolbar-search:focus { border-color:var(--accent); }
+  .filter-group { display:flex;gap:.375rem; }
+  .filter-btn { font-size:.8rem;font-weight:500;padding:.3rem .75rem;border-radius:var(--radius-full);border:1px solid var(--border-2);background:none;color:var(--text-2);cursor:pointer;transition:all var(--ease);font-family:var(--font); }
+  .filter-btn:hover { border-color:var(--border-3);color:var(--text); }
+  .filter-btn.active { background:var(--text);color:var(--bg);border-color:var(--text); }
 
-  .feature-card { padding: 1.25rem; }
-  .feature-icon  { font-size: 1.25rem; color: var(--text-3); display: block; margin-bottom: .625rem; }
-  .feature-title { font-size: .9375rem; font-weight: 600; color: var(--text); margin-bottom: .375rem; }
-  .feature-desc  { font-size: .8125rem; color: var(--text-2); line-height: 1.6; }
+  .content-split { display:grid;grid-template-columns:1fr 1fr;gap:2rem; }
+  @media(max-width:768px) { .content-split { grid-template-columns:1fr; } }
+  .content-list { overflow:hidden; }
+  .content-row { display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.625rem .875rem;border-bottom:1px solid var(--border);transition:background var(--ease); }
+  .content-row:last-child { border-bottom:none; }
+  .content-row:hover { background:var(--bg-2); }
+  .content-row-deleted { opacity:.4; }
+  .content-info { display:flex;flex-direction:column;gap:2px;min-width:0;flex:1; }
+  .content-title { font-size:.8125rem;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+  .empty-msg { font-size:.8125rem;color:var(--text-3);text-align:center;padding:1.5rem;border:1px dashed var(--border-2);border-radius:var(--radius-md); }
+  .tab-panel { animation:fadeIn .2s ease both; }
 </style>

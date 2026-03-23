@@ -1,9 +1,9 @@
-import { a6 as defineMiddleware, af as sequence } from './chunks/sequence_B8w407xz.mjs';
+import { a6 as defineMiddleware, af as sequence } from './chunks/sequence_DCQR6rMJ.mjs';
 import 'piccolore';
 import 'clsx';
 import { createServerClient } from '@supabase/ssr';
 
-const PROTECTED = ["/feed", "/profile", "/resources", "/news", "/admin"];
+const PROTECTED = ["/feed", "/profile", "/resources", "/news", "/admin", "/settings"];
 const ADMIN_ONLY = ["/admin"];
 const AUTH_PAGES = ["/login", "/signup"];
 const onRequest$1 = defineMiddleware(async (context, next) => {

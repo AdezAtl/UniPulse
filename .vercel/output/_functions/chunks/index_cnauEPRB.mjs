@@ -1,8 +1,8 @@
-import { c as createComponent } from './astro-component_CdpYp1nz.mjs';
+import { c as createComponent } from './astro-component_CX9ahtru.mjs';
 import 'piccolore';
-import { L as renderTemplate, x as maybeRenderHead } from './sequence_B8w407xz.mjs';
-import { r as renderComponent } from './entrypoint_B149CkqX.mjs';
-import { $ as $$BaseLayout } from './BaseLayout_BdC68jWf.mjs';
+import { L as renderTemplate, x as maybeRenderHead } from './sequence_DCQR6rMJ.mjs';
+import { r as renderComponent } from './entrypoint_D0IOJilK.mjs';
+import { $ as $$BaseLayout } from './BaseLayout_KL2kuLI4.mjs';
 
 const $$Index = createComponent(($$result, $$props, $$slots) => {
   return renderTemplate`${renderComponent($$result, "BaseLayout", $$BaseLayout, { "title": "UniPulse — The Campus Common Room", "data-astro-cid-j7pv25f6": true }, { "default": ($$result2) => renderTemplate` ${maybeRenderHead()}<div class="landing" data-astro-cid-j7pv25f6> <div class="hero" data-astro-cid-j7pv25f6> <div class="hero-logo" data-astro-cid-j7pv25f6> <span class="logo-mark" data-astro-cid-j7pv25f6>UP</span> <span class="hero-name" data-astro-cid-j7pv25f6>UniPulse</span> </div> <h1 class="hero-title" data-astro-cid-j7pv25f6>The campus common room.</h1> <p class="hero-sub" data-astro-cid-j7pv25f6>
