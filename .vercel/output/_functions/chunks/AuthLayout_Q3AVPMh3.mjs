@@ -1,7 +1,7 @@
 import { c as createComponent } from './astro-component_CX9ahtru.mjs';
 import 'piccolore';
 import { L as renderTemplate, x as maybeRenderHead, b7 as renderSlot } from './sequence_DCQR6rMJ.mjs';
-import { r as renderComponent } from './entrypoint_D0IOJilK.mjs';
+import { r as renderComponent } from './entrypoint_n2P0CDbj.mjs';
 import { $ as $$BaseLayout } from './BaseLayout_KL2kuLI4.mjs';
 
 const $$AuthLayout = createComponent(($$result, $$props, $$slots) => {

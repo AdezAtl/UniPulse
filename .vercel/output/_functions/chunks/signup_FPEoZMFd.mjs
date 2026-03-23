@@ -1,9 +1,9 @@
 import { c as createComponent } from './astro-component_CX9ahtru.mjs';
 import 'piccolore';
 import { L as renderTemplate, x as maybeRenderHead, a2 as addAttribute } from './sequence_DCQR6rMJ.mjs';
-import { r as renderComponent } from './entrypoint_D0IOJilK.mjs';
+import { r as renderComponent } from './entrypoint_n2P0CDbj.mjs';
 import { r as renderScript } from './script_DThEOJaB.mjs';
-import { $ as $$AuthLayout } from './AuthLayout_CntZoztR.mjs';
+import { $ as $$AuthLayout } from './AuthLayout_Q3AVPMh3.mjs';
 
 const $$Signup = createComponent(async ($$result, $$props, $$slots) => {
   const DEPARTMENTS = ["Computer Science", "Engineering", "Medicine", "Law", "Business", "Arts & Humanities", "Natural Sciences", "Social Sciences", "Education", "Other"];

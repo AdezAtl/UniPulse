@@ -1,9 +1,9 @@
 import { c as createComponent } from './astro-component_CX9ahtru.mjs';
 import 'piccolore';
 import { L as renderTemplate, x as maybeRenderHead } from './sequence_DCQR6rMJ.mjs';
-import { r as renderComponent } from './entrypoint_D0IOJilK.mjs';
+import { r as renderComponent } from './entrypoint_n2P0CDbj.mjs';
 import { r as renderScript } from './script_DThEOJaB.mjs';
-import { $ as $$AuthLayout } from './AuthLayout_CntZoztR.mjs';
+import { $ as $$AuthLayout } from './AuthLayout_Q3AVPMh3.mjs';
 
 const $$Login = createComponent(async ($$result, $$props, $$slots) => {
   const Astro2 = $$result.createAstro($$props, $$slots);
