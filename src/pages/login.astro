@@ -1,7 +1,13 @@
 ---
 import AuthLayout from '../layouts/AuthLayout.astro';
-const error    = Astro.url.searchParams.get('error');
-const redirect = Astro.url.searchParams.get('redirect') ?? '/feed';
+
+const error = Astro.url.searchParams.get('error');
+
+// ✅ Validate redirect server-side — must be a relative path
+const rawRedirect = Astro.url.searchParams.get('redirect') ?? '/feed';
+const safeRedirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
+  ? rawRedirect
+  : '/feed';
 ---
 
 <AuthLayout title="Sign In · UniPulse">
@@ -18,8 +24,15 @@ const redirect = Astro.url.searchParams.get('redirect') ?? '/feed';
       You don't have permission to access that page.
     </div>
   )}
+  {error === 'server' && (
+    <div class="alert alert-danger" style="margin-bottom:1rem">
+      A server error occurred. Please try again later.
+    </div>
+  )}
 
   <form id="login-form" style="display:flex;flex-direction:column;gap:1rem">
+    <input type="hidden" id="safe-redirect" value={safeRedirect} />
+
     <div>
       <label class="label" for="identifier">Username / Email / Pulse ID</label>
       <input id="identifier" name="identifier" type="text"
@@ -48,12 +61,19 @@ const redirect = Astro.url.searchParams.get('redirect') ?? '/feed';
 </AuthLayout>
 
 <script>
-  import { signIn } from '../lib/supabase';
+  // ✅ Import both signIn AND the supabase client so we can listen for auth state
+  import { signIn, supabase } from '../lib/supabase';
 
-  const identifier = document.getElementById('identifier');
-  const hint       = document.getElementById('id-hint');
-  const errorBox   = document.getElementById('login-error');
-  const btn        = document.getElementById('login-btn');
+  const identifier   = document.getElementById('identifier')    as HTMLInputElement;
+  const password     = document.getElementById('password')      as HTMLInputElement;
+  const hint         = document.getElementById('id-hint')       as HTMLElement;
+  const errorBox     = document.getElementById('login-error')   as HTMLElement;
+  const btn          = document.getElementById('login-btn')     as HTMLButtonElement;
+  const safeRedirect = document.getElementById('safe-redirect') as HTMLInputElement;
+
+  if (!identifier || !password || !hint || !errorBox || !btn || !safeRedirect) {
+    console.error('[login] One or more required DOM elements are missing.');
+  }
 
   identifier?.addEventListener('input', () => {
     const v = identifier.value.trim();
@@ -65,23 +85,50 @@ const redirect = Astro.url.searchParams.get('redirect') ?? '/feed';
 
   document.getElementById('login-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const id  = identifier.value.trim();
-    const pwd = document.getElementById('password').value;
+    const pwd = password.value;
 
     btn.disabled    = true;
     btn.textContent = 'Signing in…';
     errorBox.hidden = true;
 
-    const { error } = await signIn(id, pwd);
+    try {
+      const { error } = await signIn(id, pwd);
 
-    if (error) {
-      errorBox.textContent = error;
+      if (error) {
+        errorBox.textContent =
+          typeof error === 'string'
+            ? error
+            : (error as Error)?.message ?? 'Something went wrong. Please try again.';
+        errorBox.hidden = false;
+      } else {
+        // ✅ Wait for the auth cookie to be fully written before navigating.
+        //    Redirecting immediately after signInWithPassword() can race against
+        //    the cookie being set, causing the middleware to see no session.
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+          if (event === 'SIGNED_IN') {
+            subscription.unsubscribe(); // ✅ Clean up the listener after use
+            window.location.href = safeRedirect.value;
+          }
+        });
+
+        // ✅ Fallback: if SIGNED_IN doesn't fire within 3s, redirect anyway.
+        //    This handles edge cases where the event was already fired before
+        //    the listener was registered.
+        setTimeout(() => {
+          subscription.unsubscribe();
+          window.location.href = safeRedirect.value;
+        }, 3000);
+      }
+    } catch (err) {
+      console.error('[login] Unexpected error during sign in:', err);
+      errorBox.textContent = 'Network error. Please check your connection and try again.';
       errorBox.hidden      = false;
       btn.disabled         = false;
       btn.textContent      = 'Sign in';
-    } else {
-      const p = new URLSearchParams(window.location.search).get('redirect') ?? '/feed';
-      window.location.href = p;
     }
+    // Note: we intentionally don't reset the button in `finally` on success —
+    // the button should stay disabled while the redirect is in progress.
   });
 </script>
