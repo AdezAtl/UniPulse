@@ -1,73 +1,50 @@
 import type { APIRoute } from 'astro';
+import {
+  updateUser, updateUserPassword, getPasswordHash,
+  getUserByUsername,
+} from '../../../lib/db';
+import { verifyPassword, hashPassword } from '../../../lib/auth';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) return err('Unauthorized', 401);
-
   let body: any = {};
-  try { body = await request.json(); } catch {}
+  try { body = await request.json(); } catch { }
 
   const { action } = body;
-  const sb     = locals.supabase;
   const userId = locals.user.id;
 
-  // ── Update profile fields ─────────────────────────────────────────────────
   if (action === 'update_profile') {
     const { username, full_name, department, level } = body;
-
     if (!username?.trim()) return err('Username is required.');
     if (username.trim().length < 3) return err('Username must be at least 3 characters.');
-    if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) return err('Username can only contain letters, numbers and underscores.');
+    if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) return err('Letters, numbers, underscores only.');
     if (!department?.trim()) return err('Department is required.');
     if (!level?.trim()) return err('Level is required.');
 
-    // Check username not taken by someone else
-    const { data: existing } = await sb
-      .from('users')
-      .select('id')
-      .eq('username', username.trim())
-      .neq('id', userId)
-      .maybeSingle();
+    const existing = getUserByUsername(username.trim());
+    if (existing && existing.id !== userId) return err('That username is already taken.');
 
-    if (existing) return err('That username is already taken.');
-
-    const { error } = await sb
-      .from('users')
-      .update({
-        username:    username.trim(),
-        full_name:   full_name?.trim() || null,
-        department:  department.trim(),
-        level:       level.trim(),
-      })
-      .eq('id', userId);
-
-    if (error) return err(error.message, 500);
+    updateUser(userId, {
+      username: username.trim(),
+      full_name: full_name?.trim() || null,
+      department: department.trim(),
+      level: level.trim(),
+    });
     return ok({ message: 'Profile updated.' });
   }
 
-  // ── Change password ───────────────────────────────────────────────────────
   if (action === 'change_password') {
     const { current_password, new_password } = body;
-
     if (!new_password || new_password.length < 8) return err('New password must be at least 8 characters.');
 
-    // Re-authenticate with current password first
-    const { data: userData } = await sb
-      .from('users')
-      .select('email')
-      .eq('id', userId)
-      .single();
+    const hash = getPasswordHash(userId);
+    if (!hash) return err('User not found.', 404);
 
-    if (!userData) return err('User not found.', 404);
+    const valid = await verifyPassword(current_password, hash);
+    if (!valid) return err('Current password is incorrect.');
 
-    const { error: signInError } = await sb.auth.signInWithPassword({
-      email:    userData.email,
-      password: current_password,
-    });
-
-    if (signInError) return err('Current password is incorrect.');
-
-    const { error } = await sb.auth.updateUser({ password: new_password });
-    if (error) return err(error.message, 500);
+    const newHash = await hashPassword(new_password);
+    updateUserPassword(userId, newHash);
     return ok({ message: 'Password updated.' });
   }
 
@@ -79,7 +56,6 @@ function ok(data: object) {
     status: 200, headers: { 'Content-Type': 'application/json' },
   });
 }
-
 function err(message: string, status = 400) {
   return new Response(JSON.stringify({ error: message }), {
     status, headers: { 'Content-Type': 'application/json' },

@@ -1,96 +1,40 @@
 import type { APIRoute } from 'astro';
+import { setUserRole, setUserBanned, addAdminLog, deleteAllUserSessions } from '../../../lib/db';
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  if (!locals.user || !locals.isAdmin) {
-    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-      status: 403,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  if (!locals.user || !locals.isAdmin) return err('Unauthorized', 403);
+  let body: any = {};
+  try { body = await request.json(); } catch { }
 
-  let body: Record<string, any> = {};
-  try {
-    body = await request.json();
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid JSON body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  const action       = body.action       as string;
-  const targetUserId = body.targetUserId as string;
-  const reason       = body.reason       as string | undefined;
-  const adminId      = locals.user.id;
-  const sb           = locals.supabase;
-
-  if (!targetUserId) {
-    return new Response(JSON.stringify({ error: 'targetUserId is required' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  if (targetUserId === adminId && (action === 'demote' || action === 'ban')) {
-    return new Response(JSON.stringify({ error: 'You cannot perform this action on your own account.' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
+  const { action, targetUserId, reason } = body;
+  const adminId = locals.user.id;
+  if (!targetUserId) return err('targetUserId is required.');
+  if (targetUserId === adminId && (action === 'demote' || action === 'ban'))
+    return err('You cannot perform this action on your own account.');
 
   if (action === 'promote') {
-    const { error } = await sb.rpc('promote_to_admin', {
-      target_user_id:  targetUserId,
-      acting_admin_id: adminId,
-    });
-    if (error) return serverErr(error.message);
+    setUserRole(targetUserId, 'admin');
+    addAdminLog(adminId, 'promote_user', 'user', targetUserId);
     return ok();
   }
-
   if (action === 'demote') {
-    const { error } = await sb.rpc('demote_to_user', {
-      target_user_id:  targetUserId,
-      acting_admin_id: adminId,
-    });
-    if (error) return serverErr(error.message);
+    setUserRole(targetUserId, 'user');
+    addAdminLog(adminId, 'demote_user', 'user', targetUserId);
     return ok();
   }
-
   if (action === 'ban') {
-    const { error } = await sb.rpc('ban_user', {
-      target_user_id:  targetUserId,
-      acting_admin_id: adminId,
-      ban_reason:      reason ?? null,
-    });
-    if (error) return serverErr(error.message);
+    setUserBanned(targetUserId, true);
+    deleteAllUserSessions(targetUserId); // force logout immediately
+    addAdminLog(adminId, 'ban_user', 'user', targetUserId, { reason: reason ?? '' });
     return ok();
   }
-
   if (action === 'unban') {
-    const { error } = await sb.rpc('unban_user', {
-      target_user_id:  targetUserId,
-      acting_admin_id: adminId,
-    });
-    if (error) return serverErr(error.message);
+    setUserBanned(targetUserId, false);
+    addAdminLog(adminId, 'unban_user', 'user', targetUserId);
     return ok();
   }
-
-  return new Response(JSON.stringify({ error: `Unknown action: ${action}` }), {
-    status: 400,
-    headers: { 'Content-Type': 'application/json' },
-  });
+  return err(`Unknown action: ${action}`);
 };
 
-function ok() {
-  return new Response(JSON.stringify({ success: true }), {
-    status: 200,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
-
-function serverErr(message: string) {
-  return new Response(JSON.stringify({ error: message }), {
-    status: 500,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
+const ok = () => new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+const err = (message: string, status = 400) => new Response(JSON.stringify({ error: message }), { status, headers: { 'Content-Type': 'application/json' } });

@@ -1,65 +1,111 @@
 ---
-import AppLayout from '../layouts/AppLayout.astro';
+import AppLayout from "../layouts/AppLayout.astro";
 
 const user = Astro.locals.user!;
 
 const DEPARTMENTS = [
-  'Computer Science','Engineering','Medicine','Law','Business',
-  'Arts & Humanities','Natural Sciences','Social Sciences','Education','Other',
+  "Computer Science",
+  "Engineering",
+  "Medicine",
+  "Law",
+  "Business",
+  "Arts & Humanities",
+  "Natural Sciences",
+  "Social Sciences",
+  "Education",
+  "Other",
 ];
-const LEVELS = ['100 Level','200 Level','300 Level','400 Level','500 Level','Postgraduate'];
+const LEVELS = [
+  "100 Level",
+  "200 Level",
+  "300 Level",
+  "400 Level",
+  "500 Level",
+  "Postgraduate",
+];
 
-const success = Astro.url.searchParams.get('success');
+const success = Astro.url.searchParams.get("success");
+const errMsg = Astro.url.searchParams.get("error");
 ---
 
-<AppLayout activeNav="profile" user={user} title="Settings · UniPulse" showRightPanel={false}>
-
+<AppLayout
+  activeNav="settings"
+  user={user}
+  title="Settings · UniPulse"
+  showRightPanel={false}
+>
   <div class="page-header">
     <h1 class="page-title">Settings</h1>
   </div>
 
   <div class="settings-layout">
-
     <!-- Sidebar nav -->
     <nav class="settings-nav">
-      <a href="#profile"  class="settings-link active" data-section="profile">Profile</a>
-      <a href="#account"  class="settings-link"        data-section="account">Account</a>
-      <a href="#identity" class="settings-link"        data-section="identity">Identity</a>
+      <a href="#profile" class="settings-link active" data-section="profile"
+        >Profile</a
+      >
+      <a href="#account" class="settings-link" data-section="account">Account</a
+      >
+      <a href="#identity" class="settings-link" data-section="identity"
+        >Identity</a
+      >
     </nav>
 
-    <!-- Content -->
     <div class="settings-content">
+      {
+        success === "profile" && (
+          <div class="alert alert-success" style="margin-bottom:1.5rem">
+            Profile updated successfully.
+          </div>
+        )
+      }
+      {
+        success === "password" && (
+          <div class="alert alert-success" style="margin-bottom:1.5rem">
+            Password changed successfully.
+          </div>
+        )
+      }
+      {
+        errMsg && (
+          <div class="alert alert-danger" style="margin-bottom:1.5rem">
+            {errMsg}
+          </div>
+        )
+      }
 
-      {success === 'profile' && (
-        <div class="alert alert-success" style="margin-bottom:1.5rem">
-          Profile updated successfully.
-        </div>
-      )}
-      {success === 'password' && (
-        <div class="alert alert-success" style="margin-bottom:1.5rem">
-          Password changed successfully.
-        </div>
-      )}
-
-      <!-- ── Profile section ─────────────────────────────────────────────── -->
+      <!-- ── Profile ──────────────────────────────────────────────────────── -->
       <section class="settings-section" id="profile">
         <div class="section-header">
           <h2 class="section-title">Profile</h2>
           <p class="muted">Your public-facing information on UniPulse.</p>
         </div>
 
-        <!-- Avatar placeholder -->
         <div class="avatar-row">
-          <div class="avatar" style="width:64px;height:64px;font-size:1.5rem;font-weight:600;background:var(--bg-3);color:var(--text-2);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            {user.avatar_url
-              ? <img src={user.avatar_url} alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%" />
-              : user.username.charAt(0).toUpperCase()
+          <div
+            class="avatar"
+            style="width:64px;height:64px;font-size:1.5rem;font-weight:600;flex-shrink:0"
+          >
+            {
+              user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt=""
+                  style="width:100%;height:100%;object-fit:cover;border-radius:50%"
+                />
+              ) : (
+                user.username.charAt(0).toUpperCase()
+              )
             }
           </div>
           <div>
-            <p style="font-size:.875rem;font-weight:500;color:var(--text)">@{user.username}</p>
+            <p style="font-size:.875rem;font-weight:500;color:var(--text)">
+              @{user.username}
+            </p>
             <p class="hint">{user.pulse_id}</p>
-            <p class="hint" style="margin-top:.25rem">Avatar upload coming soon.</p>
+            <p class="hint" style="margin-top:.25rem">
+              Avatar upload coming soon.
+            </p>
           </div>
         </div>
 
@@ -67,15 +113,35 @@ const success = Astro.url.searchParams.get('success');
           <div class="form-row">
             <div>
               <label class="label" for="username">Username</label>
-              <input id="username" name="username" type="text" class="input"
-                value={user.username} required minlength="3" maxlength="30"
-                pattern="[a-zA-Z0-9_]+" autocomplete="username" />
-              <p class="hint" style="margin-top:.25rem">Letters, numbers, underscores only.</p>
+              <input
+                id="username"
+                name="username"
+                type="text"
+                class="input"
+                value={user.username}
+                required
+                minlength="3"
+                maxlength="30"
+                pattern="[a-zA-Z0-9_]+"
+                autocomplete="username"
+              />
+              <p class="hint" style="margin-top:.25rem">
+                Letters, numbers, underscores only.
+              </p>
             </div>
             <div>
-              <label class="label" for="full_name">Full Name <span class="muted">(optional)</span></label>
-              <input id="full_name" name="full_name" type="text" class="input"
-                value={user.full_name ?? ''} maxlength="80" autocomplete="name" />
+              <label class="label" for="full_name"
+                >Full Name <span class="muted">(optional)</span></label
+              >
+              <input
+                id="full_name"
+                name="full_name"
+                type="text"
+                class="input"
+                value={user.full_name ?? ""}
+                maxlength="80"
+                autocomplete="name"
+              />
             </div>
           </div>
 
@@ -83,74 +149,108 @@ const success = Astro.url.searchParams.get('success');
             <div>
               <label class="label" for="department">Department</label>
               <select id="department" name="department" required class="input">
-                {DEPARTMENTS.map(d => (
-                  <option value={d} selected={d === user.department}>{d}</option>
-                ))}
+                {
+                  DEPARTMENTS.map((d) => (
+                    <option value={d} selected={d === user.department}>
+                      {d}
+                    </option>
+                  ))
+                }
               </select>
             </div>
             <div>
               <label class="label" for="level">Level</label>
               <select id="level" name="level" required class="input">
-                {LEVELS.map(l => (
-                  <option value={l} selected={l === user.level}>{l}</option>
-                ))}
+                {
+                  LEVELS.map((l) => (
+                    <option value={l} selected={l === user.level}>
+                      {l}
+                    </option>
+                  ))
+                }
               </select>
             </div>
           </div>
 
           <div id="profile-error" class="alert alert-danger" hidden></div>
 
-          <div class="form-footer">
-            <button type="submit" id="profile-btn" class="btn btn-primary btn-sm">
-              Save changes
-            </button>
+          <div style="display:flex;justify-content:flex-end;padding-top:.25rem">
+            <button
+              type="submit"
+              id="profile-btn"
+              class="btn btn-primary btn-sm">Save changes</button
+            >
           </div>
         </form>
       </section>
 
       <hr class="divider" style="margin:2rem 0" />
 
-      <!-- ── Account section ─────────────────────────────────────────────── -->
+      <!-- ── Account ──────────────────────────────────────────────────────── -->
       <section class="settings-section" id="account">
         <div class="section-header">
           <h2 class="section-title">Account</h2>
-          <p class="muted">Manage your login credentials.</p>
+          <p class="muted">Change your login password.</p>
         </div>
 
         <form id="password-form" class="settings-form">
           <div>
             <label class="label" for="current_password">Current Password</label>
-            <input id="current_password" name="current_password" type="password"
-              class="input" placeholder="••••••••" required autocomplete="current-password" />
+            <input
+              id="current_password"
+              name="current_password"
+              type="password"
+              class="input"
+              placeholder="••••••••"
+              required
+              autocomplete="current-password"
+            />
           </div>
           <div class="form-row">
             <div>
               <label class="label" for="new_password">New Password</label>
-              <input id="new_password" name="new_password" type="password"
-                class="input" placeholder="Min. 8 characters" required minlength="8"
-                autocomplete="new-password" />
+              <input
+                id="new_password"
+                name="new_password"
+                type="password"
+                class="input"
+                placeholder="Min. 8 characters"
+                required
+                minlength="8"
+                autocomplete="new-password"
+              />
             </div>
             <div>
-              <label class="label" for="confirm_password">Confirm New Password</label>
-              <input id="confirm_password" name="confirm_password" type="password"
-                class="input" placeholder="Repeat new password" required
-                autocomplete="new-password" />
+              <label class="label" for="confirm_password"
+                >Confirm New Password</label
+              >
+              <input
+                id="confirm_password"
+                name="confirm_password"
+                type="password"
+                class="input"
+                placeholder="Repeat new password"
+                required
+                autocomplete="new-password"
+              />
             </div>
           </div>
 
           <div id="password-error" class="alert alert-danger" hidden></div>
 
-          <div class="form-footer">
-            <button type="submit" id="password-btn" class="btn btn-primary btn-sm">
-              Change password
-            </button>
+          <div style="display:flex;justify-content:flex-end;padding-top:.25rem">
+            <button
+              type="submit"
+              id="password-btn"
+              class="btn btn-primary btn-sm">Change password</button
+            >
           </div>
         </form>
       </section>
 
       <hr class="divider" style="margin:2rem 0" />
 
-      <!-- ── Identity section ────────────────────────────────────────────── -->
+      <!-- ── Identity ─────────────────────────────────────────────────────── -->
       <section class="settings-section" id="identity">
         <div class="section-header">
           <h2 class="section-title">Identity</h2>
@@ -160,33 +260,36 @@ const success = Astro.url.searchParams.get('success');
         <div class="identity-grid">
           <div class="identity-item">
             <span class="label" style="margin-bottom:.25rem">Pulse ID</span>
-            <div class="identity-value">
-              <code class="pulse-id" style="font-size:.875rem;padding:4px 10px">{user.pulse_id}</code>
+            <div
+              style="display:flex;align-items:center;gap:.625rem;flex-wrap:wrap"
+            >
+              <code class="pulse-id" style="font-size:.875rem;padding:4px 10px"
+                >{user.pulse_id}</code
+              >
               <span class="hint">Permanent — cannot be changed</span>
             </div>
           </div>
-
           <div class="identity-item">
             <span class="label" style="margin-bottom:.25rem">Role</span>
-            <div class="identity-value">
-              <span class={user.role === 'admin' ? 'badge badge-warn' : 'badge badge-gray'}>
-                {user.role === 'admin' ? '◈ Admin' : '◎ User'}
-              </span>
-            </div>
+            <span
+              class={user.role === "admin"
+                ? "badge badge-warn"
+                : "badge badge-gray"}
+            >
+              {user.role === "admin" ? "◈ Admin" : "◎ User"}
+            </span>
           </div>
-
           <div class="identity-item">
             <span class="label" style="margin-bottom:.25rem">Department</span>
-            <div class="identity-value">
-              <span style="font-size:.9375rem;color:var(--text)">{user.department}</span>
-            </div>
+            <span style="font-size:.9375rem;color:var(--text)"
+              >{user.department}</span
+            >
           </div>
-
           <div class="identity-item">
             <span class="label" style="margin-bottom:.25rem">Level</span>
-            <div class="identity-value">
-              <span style="font-size:.9375rem;color:var(--text)">{user.level}</span>
-            </div>
+            <span style="font-size:.9375rem;color:var(--text)"
+              >{user.level}</span
+            >
           </div>
         </div>
 
@@ -194,107 +297,119 @@ const success = Astro.url.searchParams.get('success');
           <h3 class="danger-title">Danger Zone</h3>
           <div class="danger-row">
             <div>
-              <p style="font-size:.875rem;font-weight:500;color:var(--text)">Delete account</p>
-              <p class="hint">Permanently remove your account and all your posts.</p>
+              <p style="font-size:.875rem;font-weight:500;color:var(--text)">
+                Delete account
+              </p>
+              <p class="hint">
+                Permanently remove your account and all your posts.
+              </p>
             </div>
-            <button class="btn btn-danger btn-sm" id="delete-account-btn" disabled title="Coming soon">
-              Delete account
-            </button>
+            <button class="btn btn-danger btn-sm" disabled title="Coming soon"
+              >Delete account</button
+            >
           </div>
         </div>
       </section>
-
     </div>
   </div>
 </AppLayout>
 
 <script>
-  // ── Profile form ────────────────────────────────────────────────────────
-  document.getElementById('profile-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const btn  = document.getElementById('profile-btn') as HTMLButtonElement;
-    const errBox = document.getElementById('profile-error') as HTMLElement;
-    const get = (n: string) => (form.elements.namedItem(n) as HTMLInputElement)?.value.trim();
-
-    errBox.hidden   = true;
-    btn.disabled    = true;
-    btn.textContent = 'Saving…';
-
-    const res = await fetch('/api/auth/update-profile', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action:     'update_profile',
-        username:   get('username'),
-        full_name:  get('full_name'),
-        department: get('department'),
-        level:      get('level'),
-      }),
-    });
-
-    if (res.ok) {
-      window.location.href = '/settings?success=profile';
-    } else {
-      const { error } = await res.json();
-      errBox.textContent = error;
-      errBox.hidden      = false;
-      btn.disabled       = false;
-      btn.textContent    = 'Save changes';
-    }
-  });
-
-  // ── Password form ────────────────────────────────────────────────────────
-  document.getElementById('password-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const form = e.target as HTMLFormElement;
-    const btn  = document.getElementById('password-btn') as HTMLButtonElement;
-    const errBox = document.getElementById('password-error') as HTMLElement;
-    const get = (n: string) => (form.elements.namedItem(n) as HTMLInputElement)?.value;
-
-    const newPwd     = get('new_password');
-    const confirmPwd = get('confirm_password');
-
-    errBox.hidden = true;
-
-    if (newPwd !== confirmPwd) {
-      errBox.textContent = 'New passwords do not match.';
-      errBox.hidden      = false;
-      return;
-    }
-
-    btn.disabled    = true;
-    btn.textContent = 'Changing…';
-
-    const res = await fetch('/api/auth/update-profile', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action:           'change_password',
-        current_password: get('current_password'),
-        new_password:     newPwd,
-      }),
-    });
-
-    if (res.ok) {
-      window.location.href = '/settings?success=password';
-    } else {
-      const { error } = await res.json();
-      errBox.textContent = error;
-      errBox.hidden      = false;
-      btn.disabled       = false;
-      btn.textContent    = 'Change password';
-    }
-  });
-
-  // ── Settings nav smooth scroll ────────────────────────────────────────────
-  document.querySelectorAll('.settings-link').forEach(link => {
-    link.addEventListener('click', (e) => {
+  // Profile form
+  document
+    .getElementById("profile-form")
+    ?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      document.querySelectorAll('.settings-link').forEach(l => l.classList.remove('active'));
-      link.classList.add('active');
+      const form = e.target as HTMLFormElement;
+      const btn = document.getElementById("profile-btn") as HTMLButtonElement;
+      const errBox = document.getElementById("profile-error") as HTMLElement;
+      const get = (n: string) =>
+        (form.elements.namedItem(n) as HTMLInputElement)?.value.trim();
+
+      errBox.hidden = true;
+      btn.disabled = true;
+      btn.textContent = "Saving…";
+
+      const res = await fetch("/api/auth/update-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_profile",
+          username: get("username"),
+          full_name: get("full_name"),
+          department: get("department"),
+          level: get("level"),
+        }),
+      });
+
+      if (res.ok) {
+        window.location.href = "/settings?success=profile";
+      } else {
+        const { error } = await res.json();
+        errBox.textContent = error;
+        errBox.hidden = false;
+        btn.disabled = false;
+        btn.textContent = "Save changes";
+      }
+    });
+
+  // Password form
+  document
+    .getElementById("password-form")
+    ?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target as HTMLFormElement;
+      const btn = document.getElementById("password-btn") as HTMLButtonElement;
+      const errBox = document.getElementById("password-error") as HTMLElement;
+      const get = (n: string) =>
+        (form.elements.namedItem(n) as HTMLInputElement)?.value;
+
+      const newPwd = get("new_password");
+      const conf = get("confirm_password");
+
+      errBox.hidden = true;
+      if (newPwd !== conf) {
+        errBox.textContent = "New passwords do not match.";
+        errBox.hidden = false;
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = "Changing…";
+
+      const res = await fetch("/api/auth/update-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "change_password",
+          current_password: get("current_password"),
+          new_password: newPwd,
+        }),
+      });
+
+      if (res.ok) {
+        window.location.href = "/settings?success=password";
+      } else {
+        const { error } = await res.json();
+        errBox.textContent = error;
+        errBox.hidden = false;
+        btn.disabled = false;
+        btn.textContent = "Change password";
+      }
+    });
+
+  // Smooth scroll nav
+  document.querySelectorAll(".settings-link").forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      document
+        .querySelectorAll(".settings-link")
+        .forEach((l) => l.classList.remove("active"));
+      link.classList.add("active");
       const id = (link as HTMLElement).dataset.section;
-      document.getElementById(id!)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document
+        .getElementById(id!)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
   });
 </script>
@@ -309,11 +424,17 @@ const success = Astro.url.searchParams.get('success');
   }
 
   @media (max-width: 640px) {
-    .settings-layout { grid-template-columns: 1fr; }
-    .settings-nav    { display: flex; gap: .25rem; border-bottom: 1px solid var(--border); padding-bottom: .75rem; }
+    .settings-layout {
+      grid-template-columns: 1fr;
+    }
+    .settings-nav {
+      display: flex;
+      gap: 0.25rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.75rem;
+    }
   }
 
-  /* ── Settings sidebar nav ─────────────────────────────── */
   .settings-nav {
     display: flex;
     flex-direction: column;
@@ -325,27 +446,39 @@ const success = Astro.url.searchParams.get('success');
 
   .settings-link {
     display: block;
-    padding: .4375rem .75rem;
+    padding: 0.4375rem 0.75rem;
     border-radius: var(--radius-sm);
-    font-size: .875rem;
+    font-size: 0.875rem;
     font-weight: 500;
     color: var(--text-2);
     text-decoration: none;
-    transition: background var(--ease), color var(--ease);
+    transition:
+      background var(--ease),
+      color var(--ease);
   }
 
-  .settings-link:hover  { background: var(--bg-2); color: var(--text); }
-  .settings-link.active { background: var(--bg-2); color: var(--text); }
+  .settings-link:hover,
+  .settings-link.active {
+    background: var(--bg-2);
+    color: var(--text);
+  }
 
-  /* ── Sections ─────────────────────────────────────────── */
-  .settings-content { min-width: 0; }
+  .settings-content {
+    min-width: 0;
+  }
+  .settings-section {
+    scroll-margin-top: 80px;
+  }
+  .section-header {
+    margin-bottom: 1.25rem;
+  }
+  .section-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.25rem;
+  }
 
-  .settings-section { scroll-margin-top: 80px; }
-
-  .section-header { margin-bottom: 1.25rem; }
-  .section-title  { font-size: 1rem; font-weight: 600; color: var(--text); margin-bottom: .25rem; }
-
-  /* ── Avatar row ───────────────────────────────────────── */
   .avatar-row {
     display: flex;
     align-items: center;
@@ -356,7 +489,6 @@ const success = Astro.url.searchParams.get('success');
     margin-bottom: 1.5rem;
   }
 
-  /* ── Form ─────────────────────────────────────────────── */
   .settings-form {
     display: flex;
     flex-direction: column;
@@ -369,15 +501,12 @@ const success = Astro.url.searchParams.get('success');
     gap: 1rem;
   }
 
-  @media (max-width: 520px) { .form-row { grid-template-columns: 1fr; } }
-
-  .form-footer {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: .25rem;
+  @media (max-width: 520px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
   }
 
-  /* ── Identity grid ────────────────────────────────────── */
   .identity-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -385,40 +514,36 @@ const success = Astro.url.searchParams.get('success');
     margin-bottom: 2rem;
   }
 
-  @media (max-width: 520px) { .identity-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 520px) {
+    .identity-grid {
+      grid-template-columns: 1fr;
+    }
+  }
 
   .identity-item {
     background: var(--bg-2);
     border-radius: var(--radius-md);
-    padding: .875rem 1rem;
+    padding: 0.875rem 1rem;
     display: flex;
     flex-direction: column;
-    gap: .375rem;
+    gap: 0.375rem;
   }
 
-  .identity-value {
-    display: flex;
-    align-items: center;
-    gap: .625rem;
-    flex-wrap: wrap;
-  }
-
-  /* ── Danger zone ──────────────────────────────────────── */
   .danger-zone {
-    border: 1px solid rgba(185,28,28,.25);
+    border: 1px solid rgba(185, 28, 28, 0.25);
     border-radius: var(--radius-md);
     overflow: hidden;
   }
 
   .danger-title {
-    font-size: .8125rem;
+    font-size: 0.8125rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: .05em;
+    letter-spacing: 0.05em;
     color: var(--danger-text);
-    padding: .625rem 1rem;
+    padding: 0.625rem 1rem;
     background: var(--danger-bg);
-    border-bottom: 1px solid rgba(185,28,28,.15);
+    border-bottom: 1px solid rgba(185, 28, 28, 0.15);
   }
 
   .danger-row {
