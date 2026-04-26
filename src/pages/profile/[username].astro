@@ -1,7 +1,7 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
 import PostCard from "../../components/PostCard.astro";
-import { getAllUsers, getUserPosts, getSavedPosts, getUserVotes, getSavedPostIds, getFollowingIds } from "../../lib/db";
+import { getAllUsers, getUserPosts, getSavedPosts, getUserVotes, getSavedPostIds, getFollowingIds, getFollowerIds } from "../../lib/db";
 import { formatDate } from "../../lib/utils";
 
 const { username } = Astro.params;
@@ -19,6 +19,12 @@ const savedPosts = isOwnPage ? getSavedPosts(viewer.id) : [];
 const userVotes = getUserVotes(viewer.id);
 const savedIds = getSavedPostIds(viewer.id);
 const followingIds = getFollowingIds(viewer.id);
+
+const profileFollowersIds = getFollowerIds(profileUser.id);
+const profileFollowingIds = Array.from(getFollowingIds(profileUser.id));
+
+const followersUsers = allUsers.filter(u => profileFollowersIds.includes(u.id));
+const followingUsers = allUsers.filter(u => profileFollowingIds.includes(u.id));
 ---
 
 <AppLayout
@@ -98,9 +104,11 @@ const followingIds = getFollowingIds(viewer.id);
     }
   </div>
 
-  <div class="tabs-bar" style="display: flex; gap: 1rem; padding: 0 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg-2);">
-    <button class="tab-btn active" data-target="tab-posts">Posts ({posts.length})</button>
-    {isOwnPage && <button class="tab-btn" data-target="tab-saved">Saved</button>}
+  <div class="tabs-bar" style="display: flex; gap: 1rem; padding: 0 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg-2); overflow-x: auto; scrollbar-width: none;">
+    <button class="tab-btn active" data-target="tab-posts" style="white-space: nowrap;">Posts ({posts.length})</button>
+    <button class="tab-btn" data-target="tab-followers" style="white-space: nowrap;">Followers ({followersUsers.length})</button>
+    <button class="tab-btn" data-target="tab-following" style="white-space: nowrap;">Following ({followingUsers.length})</button>
+    {isOwnPage && <button class="tab-btn" data-target="tab-saved" style="white-space: nowrap;">Saved</button>}
   </div>
 
   <div id="tab-posts" class="tab-content" style="display: block;">
@@ -125,6 +133,50 @@ const followingIds = getFollowingIds(viewer.id);
         ))
       )
     }
+  </div>
+
+  <div id="tab-followers" class="tab-content" style="display: none; padding: 1rem;">
+    {followersUsers.length === 0 ? (
+      <div class="empty-state">
+        <p class="empty-title">No followers yet</p>
+      </div>
+    ) : (
+      <div class="users-grid">
+        {followersUsers.map(u => (
+          <a href={`/profile/${u.username}`} class="user-card card">
+            <div class="avatar avatar-md">
+              {u.avatar_url ? <img src={u.avatar_url} alt="" /> : u.username.charAt(0).toUpperCase()}
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight: 600; color: var(--text-1);">{u.full_name || u.username}</div>
+              <div style="font-size: .8125rem; color: var(--text-2);">u/{u.username}</div>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+
+  <div id="tab-following" class="tab-content" style="display: none; padding: 1rem;">
+    {followingUsers.length === 0 ? (
+      <div class="empty-state">
+        <p class="empty-title">Not following anyone yet</p>
+      </div>
+    ) : (
+      <div class="users-grid">
+        {followingUsers.map(u => (
+          <a href={`/profile/${u.username}`} class="user-card card">
+            <div class="avatar avatar-md">
+              {u.avatar_url ? <img src={u.avatar_url} alt="" /> : u.username.charAt(0).toUpperCase()}
+            </div>
+            <div style="flex:1;">
+              <div style="font-weight: 600; color: var(--text-1);">{u.full_name || u.username}</div>
+              <div style="font-size: .8125rem; color: var(--text-2);">u/{u.username}</div>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
   </div>
 
   {isOwnPage && (
@@ -172,4 +224,23 @@ const followingIds = getFollowingIds(viewer.id);
   }
   .tab-btn.active { color: var(--text-1); border-bottom-color: var(--accent); }
   .tab-btn:hover:not(.active) { color: var(--text-1); }
+
+  .users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  
+  .user-card {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .user-card:hover {
+    background: var(--bg-2);
+    transform: translateY(-2px);
+  }
 </style>

@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { addVote, removeVote } from '../../lib/db';
+import { addVote, removeVote, getPostById, createNotification } from '../../lib/db';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) return err('Unauthorized', 401);
@@ -13,6 +13,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
     removeVote(locals.user.id, postId);
   } else {
     addVote(locals.user.id, postId, value);
+    if (value === 1) {
+      const post = getPostById(postId);
+      if (post && post.author_id !== locals.user.id) {
+        createNotification(post.author_id, `u/${locals.user.username} liked your post`, `/post/${postId}`);
+      }
+    }
   }
 
   return new Response(JSON.stringify({ success: true }), {

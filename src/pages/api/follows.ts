@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { toggleFollow } from '../../lib/db';
+import { toggleFollow, createNotification } from '../../lib/db';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) return err('Unauthorized', 401);
@@ -10,6 +10,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!followingId) return err('Invalid request.');
 
   const following = toggleFollow(locals.user.id, followingId);
+  if (following) {
+    createNotification(followingId, `u/${locals.user.username} started following you`, `/profile/${locals.user.username}`);
+  }
 
   return new Response(JSON.stringify({ success: true, following }), {
     status: 200, headers: { 'Content-Type': 'application/json' },

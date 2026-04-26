@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createComment } from '../../lib/db';
+import { createComment, getPostById, createNotification } from '../../lib/db';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) return err('Unauthorized', 401);
@@ -10,6 +10,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!postId || !content || content.trim().length === 0) return err('Invalid request.');
 
   createComment(postId, locals.user.id, content.trim());
+  
+  const post = getPostById(postId);
+  if (post && post.author_id !== locals.user.id) {
+    createNotification(post.author_id, `u/${locals.user.username} commented on your post`, `/post/${postId}`);
+  }
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200, headers: { 'Content-Type': 'application/json' },
