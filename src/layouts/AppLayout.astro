@@ -41,7 +41,7 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
 .sidebar-col { position:sticky; top:60px; height:calc(100dvh - 60px); overflow-y:auto; padding-top:1.5rem; padding-left:1rem; transition: transform 0.3s var(--ease); z-index: 40; background: var(--bg); }
 .feed-col    { padding: 1.5rem 1.5rem 0; }
 .panel-col   { position:sticky; top:60px; height:calc(100dvh - 60px); overflow-y:auto; padding-top:1.5rem; padding-right:1rem; }
-.mobile-nav  { display:none; position:fixed; bottom:0; left:0; right:0; height:60px; background:var(--bg); border-top:1px solid var(--border); z-index:40; justify-content:space-around; align-items:center; padding:0 1rem; }
+.mobile-nav  { display:none; position:fixed; bottom:0; left:0; right:0; height:60px; background:var(--bg); border-top:1px solid var(--border); z-index:40; justify-content:space-around; align-items:center; padding:0 1rem; transition: transform 0.3s var(--ease); }
 .mobile-nav-item { display:flex; align-items:center; justify-content:center; width:44px; height:44px; border-radius:12px; color:var(--text-3); transition:color 0.15s, background 0.15s; }
 .mobile-nav-item.active { color:var(--text-1); }
 .mobile-nav-item:hover { background:var(--bg-2); color:var(--text-2); }
@@ -59,7 +59,8 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
     position: fixed; 
     top: 60px; 
     left: 0; 
-    bottom: 60px; 
+    bottom: 0; 
+    z-index: 50;
     width: 280px; 
     transform: translateX(-100%); 
     border-right: 1px solid var(--border);
@@ -67,7 +68,9 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
     box-shadow: 4px 0 16px rgba(0,0,0,0.1);
   } 
   :global(.mobile-sidebar-open) .sidebar-col { transform: translateX(0); }
+  :global(.mobile-sidebar-open) .mobile-nav { transform: translateY(100%); }
   .mobile-nav { display:flex; } 
+  .mobile-nav-hidden { transform: translateY(100%); }
 }
 </style>
 
@@ -97,6 +100,23 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
     (window as any).showToast(pendingToast);
     sessionStorage.removeItem('showToast');
   }
+
+  // Mobile nav auto-hide on scroll
+  let lastScrollY = window.scrollY;
+  window.addEventListener('scroll', () => {
+    if (window.innerWidth <= 640) {
+      const currentScrollY = window.scrollY;
+      const nav = document.querySelector('.mobile-nav');
+      if (nav && !document.body.classList.contains('mobile-sidebar-open')) {
+        if (currentScrollY > lastScrollY && currentScrollY > 60) {
+          nav.classList.add('mobile-nav-hidden');
+        } else {
+          nav.classList.remove('mobile-nav-hidden');
+        }
+      }
+      lastScrollY = currentScrollY;
+    }
+  }, { passive: true });
 
   // Simple Real-Time Updates Poller
   let initialPostTime: string | null = null;
