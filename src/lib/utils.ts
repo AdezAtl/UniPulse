@@ -9,7 +9,7 @@ export function generatePulseId() {
 }
 
 export const DAILY_POST_LIMIT = 5;
-export const COOLDOWN_MINUTES = 15;
+export const COOLDOWN_MINUTES = 1;
 
 export function formatRelativeTime(ts: string): string {
   const diff = Date.now() - new Date(ts).getTime();
@@ -45,4 +45,25 @@ export function getCooldownRemaining(lastPostTime: Date | null): number {
 
 export function truncate(str: string, n: number): string {
   return str.length > n ? str.slice(0, n) + '…' : str;
+}
+
+export function parseMarkdown(text: string | null): string {
+  if (!text) return '';
+  let html = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+    
+  // bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // italic
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" style="color: var(--accent); text-decoration: underline;">$1</a>');
+  // code
+  html = html.replace(/`([^`]+)`/g, '<code style="background: var(--bg-2); padding: .125rem .25rem; border-radius: 4px; font-family: monospace;">$1</code>');
+  // newlines
+  html = html.replace(/\n/g, '<br/>');
+
+  return html;
 }

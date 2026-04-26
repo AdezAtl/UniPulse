@@ -13,20 +13,23 @@ import { getCooldownRemaining } from "../lib/utils";
 const user = Astro.locals.user!;
 const posts = getFeedPosts();
 const likedIds = getLikedPostIds(user.id);
-const todayCount = getTodayPostCount(user.id);
+const todayCount = Astro.locals.isAdmin ? 0 : getTodayPostCount(user.id);
 const lastPost = getLastPostTime(user.id);
-const cooldownSecs = getCooldownRemaining(lastPost);
+const cooldownSecs = Astro.locals.isAdmin ? 0 : getCooldownRemaining(lastPost);
 const likedSet = new Set(likedIds);
 ---
 
 <AppLayout activeNav="feed" user={user} title="Feed · UniPulse">
-  <div class="page-header"><h1 class="page-title">The Common Room</h1></div>
-  <PostComposer
-    user={user}
-    todayCount={todayCount}
-    cooldownSecs={cooldownSecs}
-  />
-  <div>
+  <div id="compose" style="scroll-margin-top: 80px; margin-bottom: 1rem;">
+    <PostComposer
+      user={user}
+      todayCount={todayCount}
+      cooldownSecs={cooldownSecs}
+      isAdmin={Astro.locals.isAdmin}
+    />
+  </div>
+  
+  <div class="feed-posts">
     {
       !posts || posts.length === 0 ? (
         <div class="empty-state">

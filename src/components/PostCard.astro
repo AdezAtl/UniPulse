@@ -1,88 +1,126 @@
 ---
 import type { PostWithMeta } from '../lib/database.types';
-import { formatRelativeTime } from '../lib/utils';
+import { formatRelativeTime, parseMarkdown } from '../lib/utils';
 
-interface Props { post: PostWithMeta; isLiked: boolean; isAdmin: boolean; currentUserId: string; }
-const { post, isLiked, isAdmin, currentUserId } = Astro.props;
+interface Props { 
+  post: PostWithMeta; 
+  isLiked?: boolean; // backwards compatibility
+  userVote?: number; 
+  isSaved?: boolean;
+  isFollowing?: boolean;
+  commentCount?: number;
+  isAdmin: boolean; 
+  currentUserId: string; 
+}
+const { post, isLiked, userVote = isLiked ? 1 : 0, isSaved, isFollowing, commentCount = post.comment_count || 0, isAdmin, currentUserId } = Astro.props as Props;
 ---
 
 <article class={`post-card ${post.is_flagged ? 'is-flagged' : ''}`} data-post-id={post.id}>
 
-  <div class="post-avatar">
-    <a href={`/profile/${post.username}`}>
-      <div class="avatar avatar-lg">
-        {post.avatar_url ? <img src={post.avatar_url} alt="" /> : post.username.charAt(0).toUpperCase()}
+  <header class="post-header">
+    <div class="post-header-left">
+      <a href={`/profile/${post.username}`}>
+        <div class="avatar avatar-sm">
+          {post.avatar_url ? <img src={post.avatar_url} alt="" /> : post.username.charAt(0).toUpperCase()}
+        </div>
+      </a>
+      <div class="post-meta-text">
+        <span class="post-dept">s/{post.department.toLowerCase().replace(/[^a-z0-9]/g, '') || 'general'}</span>
+        <a href={`/profile/${post.username}`} class="post-username">u/{post.username}</a>
+        <span class="post-time">· {formatRelativeTime(post.created_at)}</span>
       </div>
-    </a>
-    {post.author_role === 'admin' && <span class="author-dot"></span>}
-  </div>
+    </div>
+    
+    <div class="post-header-right">
+      {post.author_id !== currentUserId && (
+        <button class="btn btn-primary btn-xs follow-btn" data-user-id={post.author_id}>
+          {isFollowing ? 'Following' : 'Follow +'}
+        </button>
+      )}
+      
+      {(isAdmin || post.author_id === currentUserId) && (
+        <div class="admin-menu">
+          <button class="admin-trigger" data-post-id={post.id} aria-label="Post options" aria-expanded="false">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+              <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+            </svg>
+          </button>
 
-  <div class="post-body">
-    <header class="post-header">
-      <div class="post-meta">
-        <a href={`/profile/${post.username}`} class="post-username">@{post.username}</a>
-        {post.full_name && <span class="muted">{post.full_name}</span>}
-        <span class="pulse-id">{post.pulse_id}</span>
-      </div>
-      <div class="post-header-right">
-        <time class="hint" datetime={post.created_at}>{formatRelativeTime(post.created_at)}</time>
+          <div class="admin-dropdown" data-dropdown={post.id} hidden>
+            <div class="dropdown-label">Options</div>
 
-        {isAdmin && (
-          <div class="admin-menu">
-            <button class="admin-trigger" data-post-id={post.id} aria-label="Admin options" aria-expanded="false">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
-              </svg>
-            </button>
-
-            <div class="admin-dropdown" data-dropdown={post.id} hidden>
-              <div class="dropdown-label">Admin controls</div>
-
+            {isAdmin && (
               <button class="dropdown-item" data-post-action="flag" data-post-id={post.id} data-flagged={String(post.is_flagged)}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>
                 {post.is_flagged ? 'Remove flag' : 'Flag for review'}
               </button>
+            )}
 
-              <button class="dropdown-item" data-post-action="edit" data-post-id={post.id} data-content={post.content}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                Edit post
-              </button>
+            <button class="dropdown-item" data-post-action="edit" data-post-id={post.id} data-content={post.content}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              Edit post
+            </button>
 
-              <div class="dropdown-sep"></div>
+            <div class="dropdown-sep"></div>
 
-              <button class="dropdown-item danger" data-post-action="delete" data-post-id={post.id}>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                Delete post
-              </button>
+            <button class="dropdown-item danger" data-post-action="delete" data-post-id={post.id}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+              Delete post
+            </button>
 
+            {isAdmin && (
               <a href="/admin?tab=users" class="dropdown-item">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 View in admin
               </a>
-            </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  </header>
+
+      <div class="post-body">
+        <div class="post-content" set:html={parseMarkdown(post.content)}></div>
+        
+        {post.media_url && (
+          <div class="post-media" style="margin-top: .75rem;">
+            {post.media_url.match(/\.(mp4|webm)$/i) ? (
+              <video src={post.media_url} controls style="max-width: 100%; max-height: 500px; border-radius: var(--radius-md); background: #000;"></video>
+            ) : (
+              <img src={post.media_url} alt="Post media" style="max-width: 100%; max-height: 500px; border-radius: var(--radius-md); object-fit: contain; background: var(--bg-2);" loading="lazy" />
+            )}
           </div>
         )}
       </div>
-    </header>
 
-    <p class="post-content">{post.content}</p>
-
-    <footer class="post-footer">
-      <button
-        class={`like-btn ${isLiked ? 'liked' : ''}`}
-        data-post-id={post.id}
-        aria-label={isLiked ? 'Unlike' : 'Like'}
-        aria-pressed={String(isLiked)}
-      >
-        <span class="like-icon">{isLiked ? '♥' : '♡'}</span>
-        <span class="like-count">{post.like_count}</span>
+      <footer class="post-footer">
+    <div class="vote-group" data-post-id={post.id}>
+      <button class={`vote-btn upvote ${userVote === 1 ? 'active' : ''}`} aria-label="Upvote">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg>
       </button>
+      <span class="vote-count">{post.like_count > 0 ? post.like_count : (post.like_count < 0 ? post.like_count : 'Vote')}</span>
+      <button class={`vote-btn downvote ${userVote === -1 ? 'active' : ''}`} aria-label="Downvote">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+      </button>
+    </div>
 
-      {post.is_flagged && isAdmin && <span class="flagged-chip">⚑ Flagged</span>}
+    <a href={`/post/${post.id}`} class="action-btn" style="text-decoration:none;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="action-text">{commentCount > 0 ? commentCount : 'Comment'}</span>
+    </a>
 
-      <span class="post-dept">{post.department} · {post.level}</span>
-    </footer>
-  </div>
+    <button class="action-btn share-btn" data-post-id={post.id}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+      <span class="action-text">Share</span>
+    </button>
+    
+    <button class={`action-btn save-btn ${isSaved ? 'active' : ''}`} data-post-id={post.id} style={isSaved ? 'color: var(--accent)' : ''}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+    </button>
+
+    {post.is_flagged && isAdmin && <span class="flagged-chip ml-auto">⚑ Flagged</span>}
+  </footer>
 </article>
 
 <!-- Edit modal (one per page, JS-controlled) -->
@@ -92,9 +130,9 @@ const { post, isLiked, isAdmin, currentUserId } = Astro.props;
       <h3 style="font-size:.9375rem;font-weight:600">Edit Post</h3>
       <button id="edit-modal-close" class="btn btn-ghost btn-xs">✕</button>
     </div>
-    <textarea id="edit-modal-content" maxlength="280" rows="5" class="input" style="resize:none;line-height:1.5;font-size:.875rem" placeholder="Post content…"></textarea>
+    <textarea id="edit-modal-content" maxlength="2000" rows="5" class="input" style="resize:none;line-height:1.5;font-size:.875rem" placeholder="Post content…"></textarea>
     <div style="text-align:right;font-size:.75rem;color:var(--text-3);margin:.25rem 0 1rem">
-      <span id="edit-modal-chars">0</span>/280
+      <span id="edit-modal-chars">0</span>/2000
     </div>
     <div style="display:flex;justify-content:flex-end;gap:.5rem">
       <button id="edit-modal-cancel" class="btn btn-secondary btn-sm">Cancel</button>
@@ -104,36 +142,109 @@ const { post, isLiked, isAdmin, currentUserId } = Astro.props;
 </div>
 
 <script>
-  // Like toggle
-  document.querySelectorAll('.like-btn').forEach(btn => {
+  // Vote toggle logic
+  document.querySelectorAll('.vote-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const postId = btn.dataset.postId;
-      const liked  = btn.classList.contains('liked');
-      btn.disabled = true;
-
-      const res = await fetch('/api/likes', {
+      const isUp = btn.classList.contains('upvote');
+      const group = btn.closest('.vote-group') as HTMLElement;
+      if(!group) return;
+      const postId = group.dataset.postId;
+      if(!postId) return;
+      
+      const upBtn = group.querySelector('.upvote') as HTMLButtonElement;
+      const downBtn = group.querySelector('.downvote') as HTMLButtonElement;
+      const countSpan = group.querySelector('.vote-count');
+      if(!upBtn || !downBtn || !countSpan) return;
+      
+      const wasUp = upBtn.classList.contains('active');
+      const wasDown = downBtn.classList.contains('active');
+      
+      let newValue = 0;
+      if (isUp) {
+        newValue = wasUp ? 0 : 1;
+      } else {
+        newValue = wasDown ? 0 : -1;
+      }
+      
+      upBtn.disabled = true; downBtn.disabled = true;
+      const res = await fetch('/api/votes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId, action: liked ? 'unlike' : 'like' }),
+        body: JSON.stringify({ postId, value: newValue }),
       });
-
-      btn.disabled = false;
+      upBtn.disabled = false; downBtn.disabled = false;
       if (!res.ok) return;
+      
+      let diff = 0;
+      if (wasUp) diff -= 1;
+      if (wasDown) diff += 1;
+      if (newValue === 1) diff += 1;
+      if (newValue === -1) diff -= 1;
+      
+      const nText = countSpan.textContent?.replace('k', '') || '0';
+      const currentCount = parseInt(nText === 'Vote' ? '0' : nText, 10);
+      const updatedCount = currentCount + diff;
+      
+      upBtn.classList.toggle('active', newValue === 1);
+      downBtn.classList.toggle('active', newValue === -1);
+      countSpan.textContent = updatedCount === 0 ? 'Vote' : String(updatedCount);
+      
+      if ((window as any).showToast) {
+        if (newValue === 1) (window as any).showToast('Post upvoted');
+        else if (newValue === -1) (window as any).showToast('Post downvoted');
+        else (window as any).showToast('Vote removed');
+      }
+    });
+  });
 
-      const icon  = btn.querySelector('.like-icon');
-      const count = btn.querySelector('.like-count');
-      const n     = parseInt(count.textContent ?? '0', 10);
+  // Share logic
+  document.querySelectorAll('.share-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const postId = (btn as HTMLElement).dataset.postId;
+      const url = window.location.origin + '/post/' + postId;
+      navigator.clipboard.writeText(url).then(() => {
+        if ((window as any).showToast) (window as any).showToast('Link copied to clipboard!');
+        const text = btn.querySelector('.action-text');
+        if(text) {
+          const old = text.textContent;
+          text.textContent = 'Copied!';
+          setTimeout(() => text.textContent = old, 2000);
+        }
+      });
+    });
+  });
 
-      if (liked) {
-        btn.classList.remove('liked');
-        btn.setAttribute('aria-pressed', 'false');
-        icon.textContent  = '♡';
-        count.textContent = String(Math.max(0, n - 1));
-      } else {
-        btn.classList.add('liked');
-        btn.setAttribute('aria-pressed', 'true');
-        icon.textContent  = '♥';
-        count.textContent = String(n + 1);
+  // Save logic
+  document.querySelectorAll('.save-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const postId = (btn as HTMLElement).dataset.postId;
+      const res = await fetch('/api/saves', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId }) 
+      });
+      if (res.ok) {
+        const { saved } = await res.json();
+        btn.classList.toggle('active', saved);
+        (btn as HTMLElement).style.color = saved ? 'var(--accent)' : '';
+        if ((window as any).showToast) (window as any).showToast(saved ? 'Post saved to bookmarks' : 'Post removed from bookmarks');
+      }
+    });
+  });
+
+  // Follow logic
+  document.querySelectorAll('.follow-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const followingId = (btn as HTMLElement).dataset.userId;
+      const res = await fetch('/api/follows', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ followingId }) 
+      });
+      if (res.ok) {
+        const { following } = await res.json();
+        btn.textContent = following ? 'Following' : 'Follow +';
+        if ((window as any).showToast) (window as any).showToast(following ? 'You are now following this user' : 'You unfollowed this user');
       }
     });
   });
@@ -142,23 +253,23 @@ const { post, isLiked, isAdmin, currentUserId } = Astro.props;
   document.querySelectorAll('.admin-trigger').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      const id = btn.dataset.postId;
-      const dd = document.querySelector(`[data-dropdown="${id}"]`);
+      const id = (btn as HTMLElement).dataset.postId;
+      const dd = document.querySelector(`[data-dropdown="${id}"]`) as HTMLElement;
       if (!dd) return;
       const open = !dd.hidden;
-      document.querySelectorAll('[data-dropdown]').forEach(d => d.hidden = true);
+      document.querySelectorAll('[data-dropdown]').forEach(d => (d as HTMLElement).hidden = true);
       dd.hidden = open;
       btn.setAttribute('aria-expanded', String(!open));
     });
   });
 
   document.addEventListener('click', () => {
-    document.querySelectorAll('[data-dropdown]').forEach(d => d.hidden = true);
+    document.querySelectorAll('[data-dropdown]').forEach(d => (d as HTMLElement).hidden = true);
   });
 
-  // Admin actions
-  async function adminAction(action, postId, content) {
-    const res = await fetch('/api/admin/post', {
+  // Actions
+  async function adminAction(action: string, postId: string, content?: string) {
+    const res = await fetch('/api/posts/action', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, postId, content }),
@@ -167,21 +278,26 @@ const { post, isLiked, isAdmin, currentUserId } = Astro.props;
     else { const { error } = await res.json().catch(() => ({ error: 'Error' })); alert(error); }
   }
 
-  let pendingEditId = null;
+  let pendingEditId: string | null = null;
 
   document.querySelectorAll('[data-post-action]').forEach(btn => {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
-      const { postAction, postId, content, flagged } = btn.dataset;
+      const dataset = (btn as HTMLElement).dataset;
+      const { postAction, postId, content, flagged } = dataset;
+
+      if (!postAction || !postId) return;
 
       if (postAction === 'edit') {
         pendingEditId = postId;
-        const ta    = document.getElementById('edit-modal-content');
+        const ta    = document.getElementById('edit-modal-content') as HTMLTextAreaElement;
         const chars = document.getElementById('edit-modal-chars');
-        ta.value          = content ?? '';
-        chars.textContent = String((content ?? '').length);
-        document.getElementById('admin-edit-modal').hidden = false;
-        ta.focus();
+        if(ta && chars) {
+          ta.value          = content ?? '';
+          chars.textContent = String((content ?? '').length);
+          document.getElementById('admin-edit-modal')!.hidden = false;
+          ta.focus();
+        }
         return;
       }
 
@@ -196,19 +312,19 @@ const { post, isLiked, isAdmin, currentUserId } = Astro.props;
 
   // Edit modal
   const editModal = document.getElementById('admin-edit-modal');
-  const editTA    = document.getElementById('edit-modal-content');
+  const editTA    = document.getElementById('edit-modal-content') as HTMLTextAreaElement;
   const editChars = document.getElementById('edit-modal-chars');
 
-  editTA?.addEventListener('input', () => { editChars.textContent = String(editTA.value.length); });
+  editTA?.addEventListener('input', () => { if(editChars && editTA) editChars.textContent = String(editTA.value.length); });
 
-  const closeEdit = () => { editModal.hidden = true; pendingEditId = null; };
+  const closeEdit = () => { if(editModal) editModal.hidden = true; pendingEditId = null; };
   document.getElementById('edit-modal-close')?.addEventListener('click',  closeEdit);
   document.getElementById('edit-modal-cancel')?.addEventListener('click', closeEdit);
   document.getElementById('edit-modal-save')?.addEventListener('click', async () => {
-    if (!pendingEditId) return;
+    if (!pendingEditId || !editTA) return;
     const val = editTA.value.trim();
     if (!val) { alert('Content cannot be empty.'); return; }
-    editModal.hidden = true;
+    if(editModal) editModal.hidden = true;
     await adminAction('edit', pendingEditId, val);
   });
 </script>
@@ -216,103 +332,125 @@ const { post, isLiked, isAdmin, currentUserId } = Astro.props;
 <style>
   .post-card {
     display: flex;
-    gap: .75rem;
+    flex-direction: column;
+    gap: .5rem;
     padding: 1rem 1.25rem;
     border-bottom: 1px solid var(--border);
     transition: background var(--ease);
+    background: var(--bg);
+    margin-bottom: 0.5rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
   }
 
-  .post-card:hover         { background: color-mix(in srgb, var(--bg-2) 50%, transparent); }
-  .post-card.is-flagged    { border-left: 2px solid #f59e0b; padding-left: calc(1.25rem - 2px); }
-
-  .post-avatar { position: relative; flex-shrink: 0; }
-
-  .author-dot {
-    position: absolute;
-    bottom: 0; right: 0;
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    background: #f59e0b;
-    border: 2px solid var(--bg);
-  }
-
-  .post-body { flex: 1; min-width: 0; }
+  .post-card.is-flagged { border-left: 2px solid #f59e0b; }
 
   .post-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: .5rem;
-    margin-bottom: .375rem;
   }
 
-  .post-meta {
+  .post-header-left {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: .375rem .5rem;
+    gap: .5rem;
   }
 
-  .post-username {
-    font-size: .875rem;
-    font-weight: 600;
-    color: var(--text);
-    text-decoration: none;
+  .post-meta-text {
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    font-size: .8125rem;
   }
 
+  .post-dept { font-weight: 600; color: var(--text-1); }
+  .post-username { color: var(--text-2); text-decoration: none; }
   .post-username:hover { text-decoration: underline; }
+  .post-time { color: var(--text-3); }
 
   .post-header-right {
     display: flex;
     align-items: center;
     gap: .5rem;
-    flex-shrink: 0;
   }
+
+  .follow-btn {
+    border-radius: 99px;
+    padding: 0.25rem 0.75rem;
+    font-weight: 600;
+  }
+
+  .post-body { padding-left: 0; }
 
   .post-content {
     font-size: .9375rem;
-    color: var(--text);
-    line-height: 1.6;
+    color: var(--text-1);
+    line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-word;
-    margin-bottom: .625rem;
   }
 
   .post-footer {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: .5rem;
+    margin-top: .5rem;
   }
 
-  .like-btn {
+  .vote-group {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-2);
+    border-radius: 99px;
+    padding: 2px;
+  }
+
+  .vote-btn {
     display: flex;
     align-items: center;
-    gap: .3rem;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--text-3);
-    font-size: .875rem;
-    padding: 0;
-    transition: color var(--ease);
+    color: var(--text-2);
+    transition: background .15s, color .15s;
+  }
+  .vote-btn:hover { background: var(--border); }
+  .vote-btn.upvote.active { color: var(--accent-2); }
+  .vote-btn.downvote.active { color: var(--accent-2); }
+  
+  .vote-count {
+    font-size: .8125rem;
+    font-weight: 600;
+    padding: 0 .25rem;
+    color: var(--text-1);
   }
 
-  .like-btn:hover { color: #ef4444; }
-  .like-btn.liked  { color: #ef4444; }
-  .like-btn:disabled { cursor: not-allowed; opacity: .5; }
-  .like-icon { font-size: .9375rem; line-height: 1; }
+  .action-btn {
+    display: flex;
+    align-items: center;
+    gap: .375rem;
+    background: var(--bg-2);
+    border: none;
+    border-radius: 99px;
+    padding: .375rem .75rem;
+    cursor: pointer;
+    color: var(--text-2);
+    font-size: .8125rem;
+    font-weight: 600;
+    transition: background .15s;
+  }
+  .action-btn:hover { background: var(--border); color: var(--text-1); }
 
   .flagged-chip {
     font-size: .75rem;
     font-weight: 500;
-    color: var(--warn-text);
-  }
-
-  .post-dept {
-    font-size: .75rem;
-    color: var(--text-3);
-    margin-left: auto;
-    white-space: nowrap;
+    color: var(--amber);
   }
 
   /* Admin menu */
@@ -328,9 +466,8 @@ const { post, isLiked, isAdmin, currentUserId } = Astro.props;
     border: none;
     cursor: pointer;
     color: var(--text-3);
-    transition: background var(--ease), color var(--ease);
+    transition: background .15s, color .15s;
   }
-
   .admin-trigger:hover { background: var(--bg-2); color: var(--text-2); }
 
   .admin-dropdown {
@@ -345,7 +482,6 @@ const { post, isLiked, isAdmin, currentUserId } = Astro.props;
     padding: .375rem;
     box-shadow: 0 4px 16px rgba(0,0,0,.1);
   }
-
   .admin-dropdown[hidden] { display: none; }
 
   .dropdown-label {
@@ -371,15 +507,12 @@ const { post, isLiked, isAdmin, currentUserId } = Astro.props;
     font-family: var(--font);
     color: var(--text-2);
     text-decoration: none;
-    transition: background var(--ease), color var(--ease);
+    transition: background .15s, color .15s;
   }
-
-  .dropdown-item:hover        { background: var(--bg-2); color: var(--text); }
-  .dropdown-item.danger       { color: var(--danger-text); }
-  .dropdown-item.danger:hover { background: var(--danger-bg); }
-
+  .dropdown-item:hover { background: var(--bg-2); color: var(--text-1); }
+  .dropdown-item.danger { color: var(--red); }
+  .dropdown-item.danger:hover { background: var(--red-bg); }
   .dropdown-sep { height: 1px; background: var(--border); margin: .25rem 0; }
-
   .modal-head {
     display: flex;
     justify-content: space-between;

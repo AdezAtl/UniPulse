@@ -14,7 +14,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const userId = locals.user.id;
 
   if (action === 'update_profile') {
-    const { username, full_name, department, level } = body;
+    const { username, full_name, department, level, avatar_url } = body;
     if (!username?.trim()) return err('Username is required.');
     if (username.trim().length < 3) return err('Username must be at least 3 characters.');
     if (!/^[a-zA-Z0-9_]+$/.test(username.trim())) return err('Letters, numbers, underscores only.');
@@ -29,6 +29,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
       full_name: full_name?.trim() || null,
       department: department.trim(),
       level: level.trim(),
+      avatar_url: avatar_url || undefined,
     });
     return ok({ message: 'Profile updated.' });
   }

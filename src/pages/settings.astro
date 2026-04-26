@@ -89,12 +89,21 @@ const errMsg = Astro.url.searchParams.get("error");
             {
               user.avatar_url ? (
                 <img
+                  id="avatar-preview-img"
                   src={user.avatar_url}
                   alt=""
                   style="width:100%;height:100%;object-fit:cover;border-radius:50%"
                 />
               ) : (
-                user.username.charAt(0).toUpperCase()
+                <>
+                  <img
+                    id="avatar-preview-img"
+                    src=""
+                    alt=""
+                    style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:none"
+                  />
+                  <span id="avatar-preview-initial">{user.username.charAt(0).toUpperCase()}</span>
+                </>
               )
             }
           </div>
@@ -103,13 +112,17 @@ const errMsg = Astro.url.searchParams.get("error");
               @{user.username}
             </p>
             <p class="hint">{user.pulse_id}</p>
-            <p class="hint" style="margin-top:.25rem">
-              Avatar upload coming soon.
-            </p>
+            <div style="margin-top:.5rem; display:flex; gap:.5rem; align-items:center;">
+              <input type="file" id="avatar-upload" accept="image/*" hidden />
+              <button type="button" id="upload-avatar-btn" class="btn btn-secondary btn-xs">Upload Image</button>
+              <button type="button" id="remove-avatar-btn" class="btn btn-ghost btn-xs" style="color:var(--danger-text); display:none;">Remove</button>
+              <span id="avatar-upload-status" class="hint" style="display:none;"></span>
+            </div>
           </div>
         </div>
 
         <form id="profile-form" class="settings-form">
+          <input type="hidden" name="avatar_url" id="avatar_url_input" value={user.avatar_url || ""} />
           <div class="form-row">
             <div>
               <label class="label" for="username">Username</label>
@@ -339,6 +352,7 @@ const errMsg = Astro.url.searchParams.get("error");
           full_name: get("full_name"),
           department: get("department"),
           level: get("level"),
+          avatar_url: (document.getElementById("avatar_url_input") as HTMLInputElement)?.value || undefined,
         }),
       });
 
@@ -352,6 +366,68 @@ const errMsg = Astro.url.searchParams.get("error");
         btn.textContent = "Save changes";
       }
     });
+
+  // Avatar logic
+  const uploadAvatarBtn = document.getElementById("upload-avatar-btn");
+  const avatarUpload = document.getElementById("avatar-upload");
+  const removeAvatarBtn = document.getElementById("remove-avatar-btn");
+  const avatarUrlInput = document.getElementById("avatar_url_input");
+  const avatarPreviewImg = document.getElementById("avatar-preview-img");
+  const avatarPreviewInitial = document.getElementById("avatar-preview-initial");
+  const avatarStatus = document.getElementById("avatar-upload-status");
+
+  if (avatarUrlInput && avatarUrlInput.value) {
+    removeAvatarBtn.style.display = 'inline-flex';
+  }
+
+  uploadAvatarBtn?.addEventListener('click', () => avatarUpload?.click());
+  
+  removeAvatarBtn?.addEventListener('click', () => {
+    avatarUrlInput.value = '';
+    if (avatarPreviewImg) {
+      avatarPreviewImg.style.display = 'none';
+      avatarPreviewImg.src = '';
+    }
+    if (avatarPreviewInitial) avatarPreviewInitial.style.display = 'inline';
+    removeAvatarBtn.style.display = 'none';
+  });
+
+  avatarUpload?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    avatarStatus.textContent = "Uploading...";
+    avatarStatus.style.display = "inline";
+    avatarStatus.style.color = "var(--text-2)";
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error("Failed to upload image");
+      const data = await res.json();
+
+      // Update preview and hidden input
+      avatarUrlInput.value = data.url;
+      if (avatarPreviewImg) {
+        avatarPreviewImg.src = data.url;
+        avatarPreviewImg.style.display = 'block';
+      }
+      if (avatarPreviewInitial) avatarPreviewInitial.style.display = 'none';
+      removeAvatarBtn.style.display = 'inline-flex';
+      
+      avatarStatus.textContent = "Click 'Save changes' below to apply";
+      avatarStatus.style.color = "var(--accent)";
+    } catch (err) {
+      avatarStatus.textContent = "Upload failed.";
+      avatarStatus.style.color = "var(--danger-text)";
+    }
+  });
 
   // Password form
   document

@@ -1,0 +1,228 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import PostCard from "../components/PostCard.astro";
+import { searchAll, getLikedPostIds } from "../lib/db";
+import { formatRelativeTime } from "../lib/utils";
+
+const user = Astro.locals.user!;
+const query = Astro.url.searchParams.get("q") || "";
+const activeTab = Astro.url.searchParams.get("tab") || "all";
+
+let results = { users: [], posts: [], resources: [], news: [], events: [] };
+let likedSet = new Set<string>();
+
+if (query.trim()) {
+  results = searchAll(query.trim(), user.id);
+  const likedIds = getLikedPostIds(user.id);
+  likedSet = new Set(likedIds);
+}
+
+const tabs = [
+  { id: 'all', label: 'All' },
+  { id: 'users', label: 'Users' },
+  { id: 'posts', label: 'Posts' },
+  { id: 'events', label: 'Events' },
+  { id: 'resources', label: 'Resources' },
+  { id: 'news', label: 'News' }
+];
+
+const hasResults = Object.values(results).some(arr => arr.length > 0);
+---
+
+<AppLayout activeNav="feed" user={user} title={`Search: ${query} · UniPulse`}>
+  <div class="search-header">
+    <h1 style="font-size: 1.25rem; font-weight: 600; color: var(--text-1); margin-bottom: 1rem;">
+      Search results for "{query}"
+    </h1>
+    
+    <div class="tabs-container">
+      {tabs.map(tab => (
+        <a href={`/search?q=${encodeURIComponent(query)}&tab=${tab.id}`} class={`tab-item ${activeTab === tab.id ? 'active' : ''}`}>
+          {tab.label}
+        </a>
+      ))}
+    </div>
+  </div>
+
+  <div class="search-results-container" style="margin-top: 1rem;">
+    {!query.trim() ? (
+      <div class="empty-state">
+        <p class="empty-icon">🔍</p>
+        <p class="empty-title">Search UniPulse</p>
+        <p class="empty-sub">Find users, posts, events, and resources.</p>
+      </div>
+    ) : !hasResults ? (
+      <div class="empty-state">
+        <p class="empty-icon">😵</p>
+        <p class="empty-title">No results found</p>
+        <p class="empty-sub">We couldn't find anything matching "{query}".</p>
+      </div>
+    ) : (
+      <>
+        {/* USERS */}
+        {(activeTab === 'all' || activeTab === 'users') && results.users.length > 0 && (
+          <div class="result-section">
+            {activeTab === 'all' && <h3 class="section-title">Users</h3>}
+            <div class="users-grid">
+              {results.users.map(u => (
+                <a href={`/profile/${u.username}`} class="user-card card">
+                  <div class="avatar avatar-md">
+                    {u.avatar_url ? <img src={u.avatar_url} alt="" /> : u.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div style="flex:1;">
+                    <div style="font-weight: 600; color: var(--text-1);">{u.full_name || u.username}</div>
+                    <div style="font-size: .8125rem; color: var(--text-2);">u/{u.username}</div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* POSTS */}
+        {(activeTab === 'all' || activeTab === 'posts') && results.posts.length > 0 && (
+          <div class="result-section">
+            {activeTab === 'all' && <h3 class="section-title">Posts</h3>}
+            <div class="posts-list">
+              {results.posts.map(post => (
+                <PostCard
+                  post={post}
+                  isLiked={likedSet.has(post.id)}
+                  isAdmin={Astro.locals.isAdmin}
+                  currentUserId={user.id}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* EVENTS */}
+        {(activeTab === 'all' || activeTab === 'events') && results.events.length > 0 && (
+          <div class="result-section">
+            {activeTab === 'all' && <h3 class="section-title">Events</h3>}
+            <div class="grid-2">
+              {results.events.map(event => (
+                <a href="/events" class="card p-4 result-link-card" style="text-decoration:none; display:block;">
+                  <div style="font-weight: 600; color: var(--text-1);">{event.title}</div>
+                  <div style="font-size: .8125rem; color: var(--accent); margin: .25rem 0;">📅 {new Date(event.event_date).toLocaleString()}</div>
+                  <p style="font-size: .875rem; color: var(--text-2); margin-bottom: .5rem;">{event.description}</p>
+                  <div style="font-size: .75rem; color: var(--text-3);">Posted by u/{event.author_username}</div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* RESOURCES */}
+        {(activeTab === 'all' || activeTab === 'resources') && results.resources.length > 0 && (
+          <div class="result-section">
+            {activeTab === 'all' && <h3 class="section-title">Resources</h3>}
+            <div class="grid-2">
+              {results.resources.map(res => (
+                <a href="/resources" class="card p-4 result-link-card" style="text-decoration:none; display:block;">
+                  <div style="font-weight: 600; color: var(--text-1);">{res.title}</div>
+                  <p style="font-size: .875rem; color: var(--text-2); margin: .5rem 0;">{res.description}</p>
+                  {res.link_url && <span class="btn btn-secondary btn-sm" style="margin-top:.5rem; display:inline-block;">Visit Link</span>}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* NEWS */}
+        {(activeTab === 'all' || activeTab === 'news') && results.news.length > 0 && (
+          <div class="result-section">
+            {activeTab === 'all' && <h3 class="section-title">News</h3>}
+            <div class="grid-2">
+              {results.news.map(news => (
+                <a href="/news" class="card p-4 result-link-card" style="text-decoration:none; display:block;">
+                  <div style="font-weight: 600; color: var(--text-1);">{news.title}</div>
+                  <p style="font-size: .875rem; color: var(--text-2); margin: .5rem 0;">{news.content.substring(0, 100)}...</p>
+                  <div style="font-size: .75rem; color: var(--text-3);">{formatRelativeTime(news.created_at)}</div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+      </>
+    )}
+  </div>
+</AppLayout>
+
+<style>
+  .search-header {
+    background: var(--bg);
+    padding: 1.5rem 1rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+  }
+  
+  .tabs-container {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .tab-item {
+    padding: .5rem .25rem;
+    color: var(--text-2);
+    font-size: .9375rem;
+    font-weight: 500;
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s;
+    white-space: nowrap;
+  }
+  .tab-item:hover {
+    color: var(--text-1);
+  }
+  .tab-item.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .result-section {
+    margin-bottom: 2rem;
+  }
+  .section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--text-1);
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: .5rem;
+  }
+
+  .users-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  
+  .user-card {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: .75rem;
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .user-card:hover {
+    background: var(--bg-2);
+    transform: translateY(-2px);
+  }
+
+  .result-link-card {
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .result-link-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+</style>

@@ -1,7 +1,7 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
 import PostCard from "../../components/PostCard.astro";
-import { getAllUsers, getUserPosts, getLikedPostIds } from "../../lib/db";
+import { getAllUsers, getUserPosts, getSavedPosts, getUserVotes, getSavedPostIds, getFollowingIds } from "../../lib/db";
 import { formatDate } from "../../lib/utils";
 
 const { username } = Astro.params;
@@ -13,9 +13,12 @@ const profileUser = allUsers.find((u) => u.username === username);
 if (!profileUser) return Astro.redirect("/feed");
 
 const posts = getUserPosts(profileUser.id);
-const likedIds = getLikedPostIds(viewer.id);
-const likedSet = new Set(likedIds);
 const isOwnPage = viewer.id === profileUser.id;
+
+const savedPosts = isOwnPage ? getSavedPosts(viewer.id) : [];
+const userVotes = getUserVotes(viewer.id);
+const savedIds = getSavedPostIds(viewer.id);
+const followingIds = getFollowingIds(viewer.id);
 ---
 
 <AppLayout
@@ -79,7 +82,7 @@ const isOwnPage = viewer.id === profileUser.id;
       <p class="hint">Joined {formatDate(profileUser.created_at)}</p>
     </div>
     {
-      isOwnPage && (
+      isOwnPage ? (
         <a
           href="/settings"
           class="btn btn-secondary btn-sm"
@@ -87,17 +90,20 @@ const isOwnPage = viewer.id === profileUser.id;
         >
           Edit profile
         </a>
+      ) : (
+        <button class="btn btn-primary btn-sm follow-btn" data-user-id={profileUser.id} style="align-self:flex-start">
+          {Astro.locals.user ? (followingIds.has(profileUser.id) ? 'Following' : 'Follow +') : 'Follow +'}
+        </button>
       )
     }
   </div>
 
-  <div
-    style="padding:.625rem 1.25rem;border-bottom:1px solid var(--border);background:var(--bg-2)"
-  >
-    <span class="hint">{posts.length} posts</span>
+  <div class="tabs-bar" style="display: flex; gap: 1rem; padding: 0 1.25rem; border-bottom: 1px solid var(--border); background: var(--bg-2);">
+    <button class="tab-btn active" data-target="tab-posts">Posts ({posts.length})</button>
+    {isOwnPage && <button class="tab-btn" data-target="tab-saved">Saved</button>}
   </div>
 
-  <div>
+  <div id="tab-posts" class="tab-content" style="display: block;">
     {
       posts.length === 0 ? (
         <div class="empty-state">
@@ -110,7 +116,9 @@ const isOwnPage = viewer.id === profileUser.id;
         posts.map((post) => (
           <PostCard
             post={post}
-            isLiked={likedSet.has(post.id)}
+            userVote={userVotes[post.id] || 0}
+            isSaved={savedIds.has(post.id)}
+            isFollowing={followingIds.has(post.author_id)}
             isAdmin={isAdmin}
             currentUserId={viewer.id}
           />
@@ -118,4 +126,50 @@ const isOwnPage = viewer.id === profileUser.id;
       )
     }
   </div>
+
+  {isOwnPage && (
+    <div id="tab-saved" class="tab-content" style="display: none;">
+      {
+        savedPosts.length === 0 ? (
+          <div class="empty-state">
+            <p class="empty-title">No saved posts yet</p>
+          </div>
+        ) : (
+          savedPosts.map((post) => (
+            <PostCard
+              post={post}
+              userVote={userVotes[post.id] || 0}
+              isSaved={savedIds.has(post.id)}
+              isFollowing={followingIds.has(post.author_id)}
+              isAdmin={isAdmin}
+              currentUserId={viewer.id}
+            />
+          ))
+        )
+      }
+    </div>
+  )}
 </AppLayout>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const target = (btn as HTMLElement).dataset.target;
+      document.querySelectorAll('.tab-content').forEach(tc => {
+        (tc as HTMLElement).style.display = tc.id === target ? 'block' : 'none';
+      });
+    });
+  });
+</script>
+
+<style>
+  .tab-btn {
+    background: none; border: none; padding: .875rem 0; font-size: .875rem; font-weight: 600;
+    color: var(--text-2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab-btn.active { color: var(--text-1); border-bottom-color: var(--accent); }
+  .tab-btn:hover:not(.active) { color: var(--text-1); }
+</style>

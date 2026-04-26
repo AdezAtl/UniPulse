@@ -17,8 +17,9 @@
   --border-2: rgba(0,0,0,0.18);
 
   /* Brand */
-  --accent:   #4a6cf7;
-  --accent-2: #3451d1;
+  --accent:   #6366f1;
+  --accent-2: #8b5cf6;
+  --accent-gradient: linear-gradient(135deg, var(--accent), var(--accent-2));
 
   /* Semantic */
   --green:    #16a34a;
@@ -46,8 +47,7 @@
   --shadow:    0 4px 16px rgba(0,0,0,0.08);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
+:root.dark {
     --bg:       #111110;
     --bg-2:     #1a1a18;
     --bg-3:     #222220;
@@ -62,7 +62,6 @@
     --blue-bg:  #0c1f4a;
     --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
     --shadow:    0 4px 16px rgba(0,0,0,0.4);
-  }
 }
 
 /* ── Reset ───────────────────────────────────────────────────────────────── */
@@ -88,7 +87,7 @@ a { color: inherit; }
 button { font-family: inherit; cursor: pointer; }
 input, textarea, select { font-family: inherit; }
 
-::selection { background: rgba(74,108,247,0.18); }
+::selection { background: rgba(99,102,241,0.18); }
 
 :focus-visible {
   outline: 2px solid var(--accent);
@@ -148,8 +147,9 @@ input, textarea, select { font-family: inherit; }
 /* ── Card ────────────────────────────────────────────────────────────────── */
 .card {
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(99, 102, 241, 0.12); /* tiny bit of accent color */
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Avatar ──────────────────────────────────────────────────────────────── */
@@ -204,10 +204,15 @@ input, textarea, select { font-family: inherit; }
 .btn:active:not(:disabled) { transform: scale(0.98); }
 
 .btn-primary {
-  background: var(--text-1);
-  color: var(--bg);
+  background: var(--accent-gradient);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
 }
-.btn-primary:hover:not(:disabled) { opacity: 0.85; }
+.btn-primary:hover:not(:disabled) { 
+  opacity: 0.9;
+  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
 
 .btn-secondary {
   background: transparent;
@@ -249,7 +254,7 @@ input, textarea, select { font-family: inherit; }
 
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(74,108,247,0.12);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
   background: var(--bg);
 }
 
@@ -347,7 +352,7 @@ select.input   { cursor: pointer; }
 
 .modal-box {
   background: var(--bg);
-  border: 1px solid var(--border-2);
+  border: 1px solid rgba(99, 102, 241, 0.15);
   border-radius: var(--radius-xl);
   padding: 1.5rem;
   width: 100%;
@@ -362,7 +367,7 @@ select.input   { cursor: pointer; }
   top: calc(100% + 4px);
   right: 0;
   background: var(--bg);
-  border: 1px solid var(--border-2);
+  border: 1px solid rgba(99, 102, 241, 0.12);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
   min-width: 180px;
@@ -448,8 +453,9 @@ select.input   { cursor: pointer; }
 .table-wrap {
   overflow-x: auto;
   background: var(--bg);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(99, 102, 241, 0.12);
   border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 /* ── Small table action buttons ─────────────────────────────────────────── */
@@ -549,8 +555,8 @@ select.input   { cursor: pointer; }
 }
 
 .logo-mark {
-  background: var(--text-1);
-  color: var(--bg);
+  background: var(--accent-gradient);
+  color: #fff;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.1em;

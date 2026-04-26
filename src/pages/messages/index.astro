@@ -1,0 +1,103 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import { getConversations } from "../../lib/db";
+import { formatRelativeTime } from "../../lib/utils";
+
+const user = Astro.locals.user;
+if (!user) return Astro.redirect("/login");
+
+const conversations = getConversations(user.id);
+---
+
+<AppLayout title="Messages · UniPulse" activeNav="messages" user={user}>
+  <div class="messages-container" style="max-width: 600px; margin: 0 auto; padding-top: 1rem;">
+    <div class="messages-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+      <h1 style="font-size: 1.5rem; font-weight: 700; color: var(--text-1);">Messages</h1>
+    </div>
+
+    {conversations.length === 0 ? (
+      <div class="empty-state">
+        <p class="empty-icon">💬</p>
+        <p class="empty-title">No messages yet</p>
+        <p class="empty-sub">Start a conversation from someone's profile.</p>
+      </div>
+    ) : (
+      <div class="conversations-list" style="display: flex; flex-direction: column; gap: 0.5rem;">
+        {conversations.map(c => (
+          <a href={`/messages/${c.user.username}`} class="conversation-item">
+            <div class="avatar avatar-md">
+              {c.user.avatar_url ? <img src={c.user.avatar_url} alt="" /> : c.user.username.charAt(0).toUpperCase()}
+            </div>
+            <div class="convo-info">
+              <div class="convo-header">
+                <span class="convo-name">{c.user.full_name || c.user.username}</span>
+                <span class="convo-time">{formatRelativeTime(c.last_message.created_at)}</span>
+              </div>
+              <div class={`convo-preview ${c.unread_count > 0 ? 'unread' : ''}`}>
+                {c.last_message.sender_id === user.id ? 'You: ' : ''}{c.last_message.content}
+              </div>
+            </div>
+            {c.unread_count > 0 && (
+              <div class="unread-badge">{c.unread_count}</div>
+            )}
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</AppLayout>
+
+<style>
+  .conversation-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .conversation-item:hover {
+    background: var(--bg-2);
+    transform: translateY(-2px);
+  }
+  .convo-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .convo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.25rem;
+  }
+  .convo-name {
+    font-weight: 600;
+    color: var(--text-1);
+  }
+  .convo-time {
+    font-size: 0.75rem;
+    color: var(--text-3);
+  }
+  .convo-preview {
+    font-size: 0.875rem;
+    color: var(--text-2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .convo-preview.unread {
+    color: var(--text-1);
+    font-weight: 600;
+  }
+  .unread-badge {
+    background: var(--accent);
+    color: white;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.125rem 0.5rem;
+    border-radius: 99px;
+  }
+</style>

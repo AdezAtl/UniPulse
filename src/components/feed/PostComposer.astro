@@ -1,11 +1,11 @@
 ---
 import type { LocalUser } from '../../lib/database.types';
 import { DAILY_POST_LIMIT } from '../../lib/utils';
-interface Props { user: LocalUser; todayCount: number; cooldownSecs: number; }
-const { user, todayCount, cooldownSecs } = Astro.props;
-const remaining  = DAILY_POST_LIMIT - todayCount;
+interface Props { user: LocalUser; todayCount: number; cooldownSecs: number; isAdmin?: boolean; }
+const { user, todayCount, cooldownSecs, isAdmin } = Astro.props;
+const remaining  = isAdmin ? Infinity : DAILY_POST_LIMIT - todayCount;
 const atLimit    = remaining <= 0;
-const onCooldown = cooldownSecs > 0;
+const onCooldown = !isAdmin && cooldownSecs > 0;
 ---
 <div class="composer-wrap">
   <div class="composer-row">
@@ -26,12 +26,23 @@ const onCooldown = cooldownSecs > 0;
           <textarea id="post-content" name="content" maxlength="280" rows="3"
             placeholder={onCooldown ? 'Cooldown active…' : "What's happening on campus?"}
             disabled={onCooldown} class="composer-textarea" aria-label="Post content"></textarea>
+          
+          <div id="media-preview-container" style="display: none; position: relative; margin-bottom: .5rem;">
+            <img id="media-preview-img" src="" style="max-width: 100%; max-height: 300px; border-radius: var(--radius-md); display: none;" />
+            <video id="media-preview-vid" src="" controls style="max-width: 100%; max-height: 300px; border-radius: var(--radius-md); display: none;"></video>
+            <button type="button" id="remove-media-btn" style="position: absolute; top: .5rem; right: .5rem; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; cursor: pointer;">✕</button>
+          </div>
+
           <div class="composer-footer">
-            <div>
+            <div class="flex items-center gap-3">
               {onCooldown
                 ? <span class="cooldown-badge">⏱ <span id="cooldown-timer"></span></span>
-                : <span class="muted" style="font-size:0.8125rem">Posts today: <strong style="color:var(--text-1)">{todayCount}/{DAILY_POST_LIMIT}</strong></span>
+                : (isAdmin ? null : <span class="muted" style="font-size:0.8125rem">Posts today: <strong style="color:var(--text-1)">{todayCount}/{DAILY_POST_LIMIT}</strong></span>)
               }
+              <input type="file" id="media-input" accept="image/*,video/*" hidden disabled={onCooldown} />
+              <button type="button" id="attach-btn" class="header-icon-btn" style="width: 32px; height: 32px;" disabled={onCooldown} aria-label="Attach media">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              </button>
             </div>
             <div class="flex items-center gap-3">
               <span id="char-counter" class="char-counter">0/280</span>
@@ -50,26 +61,98 @@ const onCooldown = cooldownSecs > 0;
     const charEl   = document.getElementById('char-counter');
     const submitBtn= document.getElementById('submit-btn');
     const errorEl  = document.getElementById('post-error');
+    
+    const attachBtn = document.getElementById('attach-btn');
+    const mediaInput = document.getElementById('media-input');
+    const previewContainer = document.getElementById('media-preview-container');
+    const previewImg = document.getElementById('media-preview-img');
+    const previewVid = document.getElementById('media-preview-vid');
+    const removeMediaBtn = document.getElementById('remove-media-btn');
+    
+    let selectedFile = null;
+
+    attachBtn?.addEventListener('click', () => mediaInput?.click());
+    
+    mediaInput?.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      selectedFile = file;
+      
+      const url = URL.createObjectURL(file);
+      previewContainer.style.display = 'block';
+      if (file.type.startsWith('video/')) {
+        previewImg.style.display = 'none';
+        previewVid.style.display = 'block';
+        previewVid.src = url;
+      } else {
+        previewVid.style.display = 'none';
+        previewImg.style.display = 'block';
+        previewImg.src = url;
+      }
+    });
+
+    removeMediaBtn?.addEventListener('click', () => {
+      selectedFile = null;
+      mediaInput.value = '';
+      previewContainer.style.display = 'none';
+      previewImg.src = '';
+      previewVid.src = '';
+    });
+
     textarea?.addEventListener('input', () => {
       const len = textarea.value.length;
       charEl.textContent = `${len}/280`;
       charEl.style.color = len >= 280 ? 'var(--red)' : len >= 250 ? 'var(--amber)' : '';
     });
+    
     let remaining = cooldownSecs;
     function fmt(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
     if (remaining > 0) {
       const timerEl = document.getElementById('cooldown-timer');
-      timerEl.textContent = fmt(remaining);
-      const tick = setInterval(() => { remaining--; if (remaining<=0) { clearInterval(tick); location.reload(); } else timerEl.textContent=fmt(remaining); }, 1000);
+      if (timerEl) timerEl.textContent = fmt(remaining);
+      const tick = setInterval(() => { remaining--; if (remaining<=0) { clearInterval(tick); location.reload(); } else if (timerEl) timerEl.textContent=fmt(remaining); }, 1000);
     }
+    
     document.getElementById('post-form')?.addEventListener('submit', async e => {
       e.preventDefault();
       const content = textarea.value.trim();
-      if (!content) return;
-      submitBtn.disabled = true; submitBtn.textContent='...'; errorEl.style.display='none';
-      const res = await fetch('/api/posts', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content}) });
-      if (res.ok) { location.reload(); }
-      else { const {error} = await res.json().catch(()=>({error:'Something went wrong.'})); errorEl.textContent=error; errorEl.style.display='block'; submitBtn.disabled=false; submitBtn.textContent='Pulse'; }
+      if (!content && !selectedFile) return;
+      
+      submitBtn.disabled = true; 
+      submitBtn.textContent = '...'; 
+      errorEl.style.display = 'none';
+      
+      try {
+        let mediaUrl = null;
+        if (selectedFile) {
+          const formData = new FormData();
+          formData.append('file', selectedFile);
+          const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+          if (!uploadRes.ok) throw new Error('Failed to upload media');
+          const uploadData = await uploadRes.json();
+          mediaUrl = uploadData.url;
+        }
+
+        const res = await fetch('/api/posts', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify({ content, mediaUrl }) 
+        });
+        
+        if (res.ok) { 
+          sessionStorage.setItem('showToast', 'Post created successfully!');
+          location.reload(); 
+        }
+        else { 
+          const { error } = await res.json().catch(()=>({error:'Something went wrong.'})); 
+          throw new Error(error);
+        }
+      } catch (err) {
+        errorEl.textContent = err.message; 
+        errorEl.style.display = 'block'; 
+        submitBtn.disabled = false; 
+        submitBtn.textContent = 'Pulse';
+      }
     });
   }
 </script>
@@ -85,4 +168,6 @@ const onCooldown = cooldownSecs > 0;
 .cooldown-badge { font-size:0.8125rem; font-weight:500; color:var(--amber); background:var(--amber-bg); padding:0.2rem 0.625rem; border-radius:99px; }
 .limit-msg      { display:flex; align-items:flex-start; gap:0.75rem; padding:0.5rem 0; }
 .limit-icon     { font-size:1.25rem; }
+.header-icon-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--bg-2); border: none; color: var(--text-1); cursor: pointer; transition: background .15s, transform .1s; }
+.header-icon-btn:hover:not(:disabled) { background: var(--border); }
 </style>

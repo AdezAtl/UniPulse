@@ -1,0 +1,40 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import { getUserNotifications } from "../lib/db";
+
+const user = Astro.locals.user!;
+const notifications = getUserNotifications(user.id);
+---
+
+<AppLayout activeNav="notifications" user={user} title="Notifications · UniPulse">
+  <div class="page-header" style="margin-bottom: 1rem; border-bottom: none;"><h1 class="page-title">Notifications</h1></div>
+  
+  <div class="notifications-list" style="display: flex; flex-direction: column; gap: .5rem;">
+    {
+      !notifications || notifications.length === 0 ? (
+        <div class="empty-state">
+          <p class="empty-icon">🔔</p>
+          <p class="empty-title">All caught up!</p>
+        </div>
+      ) : (
+        notifications.map((notif) => (
+          <a href={notif.link} class={`notif-card ${!notif.is_read ? 'unread' : ''}`} style="display: block; padding: 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); text-decoration: none; color: inherit;">
+            <div style="font-size: .9375rem; color: var(--text-1); margin-bottom: .25rem;">{notif.message}</div>
+            <div style="font-size: .75rem; color: var(--text-3);">{new Date(notif.created_at).toLocaleString()}</div>
+          </a>
+        ))
+      )
+    }
+  </div>
+</AppLayout>
+
+<script>
+  // Mark as read when opening page
+  fetch('/api/notifications/read', { method: 'POST' });
+</script>
+
+<style>
+  .notif-card { transition: background .15s; }
+  .notif-card:hover { background: var(--bg-2) !important; }
+  .notif-card.unread { border-left: 3px solid var(--accent); background: rgba(99, 102, 241, 0.05) !important; }
+</style>

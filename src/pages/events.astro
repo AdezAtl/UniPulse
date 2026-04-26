@@ -1,0 +1,200 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import { getEvents, getRegisteredEventIds } from "../lib/db";
+import { formatFullDate, parseMarkdown } from "../lib/utils";
+
+const user = Astro.locals.user!;
+const events = getEvents();
+const registeredIds = getRegisteredEventIds(user.id);
+---
+
+<AppLayout activeNav="events" user={user} title="Events · UniPulse">
+  <div class="page-header">
+    <h1 class="page-title">Upcoming Events</h1>
+    <button id="open-upload" class="btn btn-primary btn-sm">+ Add Event</button>
+  </div>
+
+  <div id="upload-modal" class="modal-overlay" hidden>
+    <div class="modal-box">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h3 style="font-size:.9375rem;font-weight:600">Create Event</h3>
+        <button id="upload-close" class="btn btn-ghost btn-xs">✕</button>
+      </div>
+      <form id="upload-form" style="display:flex;flex-direction:column;gap:.875rem">
+        <div>
+          <label class="label">Event Title *</label>
+          <input name="title" type="text" required maxlength="120" class="input" placeholder="e.g. Code Night" />
+        </div>
+        <div>
+          <label class="label">Description *</label>
+          <textarea name="description" rows="3" maxlength="1000" required class="input" style="resize:none" placeholder="Details about the event…"></textarea>
+        </div>
+        <div>
+          <label class="label">Date & Time *</label>
+          <input name="event_date" type="datetime-local" required class="input" />
+        </div>
+        <div>
+          <label class="label">Location *</label>
+          <input name="location" type="text" required class="input" placeholder="e.g. Room 402 or Zoom Link" />
+        </div>
+        <div>
+          <label class="label">Upload Banner/Image (Optional)</label>
+          <input type="file" id="event-media" class="file-input" accept="image/*,video/*" style="font-size: .875rem;" />
+        </div>
+        <div id="upload-error" class="alert alert-danger" hidden></div>
+        <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:.25rem">
+          <button type="button" id="upload-cancel" class="btn btn-secondary btn-sm">Cancel</button>
+          <button type="submit" id="upload-btn" class="btn btn-primary btn-sm">Create</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="events-list">
+    {events.length === 0 ? (
+      <div class="empty-state">
+        <p class="empty-icon">📅</p>
+        <p class="empty-title">No upcoming events</p>
+        <p class="empty-sub">Check back later or add your own.</p>
+      </div>
+    ) : (
+      <div class="grid-2">
+        {events.map((event) => {
+          const isRegistered = registeredIds.has(event.id);
+          return (
+            <div class="card p-4 event-card">
+              {event.media_url && (
+                <div class="event-media" style="margin: -1rem -1rem 1rem -1rem; border-bottom: 1px solid var(--border);">
+                  {event.media_url.match(/\.(mp4|webm)$/i) ? (
+                    <video src={event.media_url} controls style="width: 100%; max-height: 200px; object-fit: cover; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg);"></video>
+                  ) : (
+                    <img src={event.media_url} alt="" style="width: 100%; max-height: 200px; object-fit: cover; border-top-left-radius: var(--radius-lg); border-top-right-radius: var(--radius-lg);" loading="lazy" />
+                  )}
+                </div>
+              )}
+              <div style="font-weight: 600; color: var(--text-1); font-size: 1.125rem;">{event.title}</div>
+              <div style="font-size: .875rem; color: var(--accent); margin: .375rem 0; font-weight: 500;">
+                📅 {formatFullDate(event.event_date)}
+              </div>
+              <div style="font-size: .875rem; color: var(--text-2); margin-bottom: .75rem;">
+                📍 {event.location}
+              </div>
+              <div class="post-content" style="font-size: .9375rem; color: var(--text-1); line-height: 1.5; margin-bottom: 1rem;" set:html={parseMarkdown(event.description)}></div>
+              
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--border-2);">
+                <div style="font-size: .75rem; color: var(--text-3);">
+                  Posted by <a href={`/profile/${event.author_username}`} style="color: var(--text-2); text-decoration: none;">u/{event.author_username}</a>
+                </div>
+                <button class={`btn btn-xs register-btn ${isRegistered ? 'btn-primary' : 'btn-secondary'}`} data-id={event.id}>
+                  {isRegistered ? 'Registered ✓' : 'Register'}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    )}
+  </div>
+</AppLayout>
+
+<script>
+  const modal = document.getElementById("upload-modal") as HTMLElement;
+  document.getElementById("open-upload")?.addEventListener("click", () => (modal.hidden = false));
+  document.getElementById("upload-close")?.addEventListener("click", () => (modal.hidden = true));
+  document.getElementById("upload-cancel")?.addEventListener("click", () => (modal.hidden = true));
+
+  document.getElementById("upload-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const btn = document.getElementById("upload-btn") as HTMLButtonElement;
+    const errBox = document.getElementById("upload-error") as HTMLElement;
+    const get = (n: string) => (form.elements.namedItem(n) as HTMLInputElement)?.value.trim();
+
+    errBox.hidden = true;
+    btn.disabled = true;
+    btn.textContent = "Creating…";
+
+    let media_url = "";
+    const fileInput = document.getElementById("event-media") as HTMLInputElement;
+    if (fileInput.files && fileInput.files.length > 0) {
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      if (!uploadRes.ok) {
+        errBox.textContent = "Failed to upload file.";
+        errBox.hidden = false;
+        btn.disabled = false;
+        btn.textContent = "Create";
+        return;
+      }
+      const uploadData = await uploadRes.json();
+      media_url = uploadData.url;
+    }
+
+    const res = await fetch("/api/events", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: get("title"),
+        description: get("description"),
+        event_date: get("event_date"),
+        location: get("location"),
+        media_url: media_url || undefined,
+      }),
+    });
+
+    if (res.ok) {
+      sessionStorage.setItem('showToast', 'Event created successfully!');
+      window.location.reload();
+    } else {
+      const { error } = await res.json();
+      errBox.textContent = error;
+      errBox.hidden = false;
+      btn.disabled = false;
+      btn.textContent = "Create";
+    }
+  });
+
+  // Event Registration toggle
+  document.querySelectorAll('.register-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const eventId = (btn as HTMLElement).dataset.id;
+      if (!eventId) return;
+
+      const res = await fetch('/api/events/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId })
+      });
+
+      if (res.ok) {
+        const { registered } = await res.json();
+        if (registered) {
+          btn.textContent = 'Registered ✓';
+          btn.classList.add('btn-primary');
+          btn.classList.remove('btn-secondary');
+          if ((window as any).showToast) (window as any).showToast('Successfully registered for event!');
+        } else {
+          btn.textContent = 'Register';
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-secondary');
+          if ((window as any).showToast) (window as any).showToast('Registration cancelled.');
+        }
+      }
+    });
+  });
+</script>
+
+<style>
+  .events-list {
+    padding: 1rem 1.25rem;
+  }
+  .event-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+</style>

@@ -54,6 +54,16 @@ const resources = getResources();
             placeholder="https://…"
           />
         </div>
+        <div>
+          <label class="label">Upload File (Optional)</label>
+          <input
+            type="file"
+            id="resource-media"
+            class="file-input"
+            accept="image/*,video/*,application/pdf"
+            style="font-size: .875rem;"
+          />
+        </div>
         <div id="upload-error" class="alert alert-danger" hidden></div>
         <div
           style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:.25rem"
@@ -114,6 +124,16 @@ const resources = getResources();
                       Open link →
                     </a>
                   )}
+                  {r.file_url && (
+                    <a
+                      href={r.file_url}
+                      target="_blank"
+                      rel="noopener"
+                      style="font-size:.8125rem;font-weight:500;color:var(--accent);text-decoration:none;margin-left:.25rem"
+                    >
+                      View File →
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -150,6 +170,26 @@ const resources = getResources();
       btn.disabled = true;
       btn.textContent = "Uploading…";
 
+      let file_url = "";
+      const fileInput = document.getElementById("resource-media") as HTMLInputElement;
+      if (fileInput.files && fileInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        const uploadRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        if (!uploadRes.ok) {
+          errBox.textContent = "Failed to upload file.";
+          errBox.hidden = false;
+          btn.disabled = false;
+          btn.textContent = "Upload";
+          return;
+        }
+        const uploadData = await uploadRes.json();
+        file_url = uploadData.url;
+      }
+
       const res = await fetch("/api/resources", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -157,10 +197,12 @@ const resources = getResources();
           title: get("title"),
           description: get("description") || undefined,
           link_url: get("link_url") || undefined,
+          file_url: file_url || undefined,
         }),
       });
 
       if (res.ok) {
+        sessionStorage.setItem('showToast', 'Resource uploaded successfully!');
         window.location.reload();
       } else {
         const { error } = await res.json();

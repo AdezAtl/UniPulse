@@ -1,0 +1,38 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import PostCard from "../../components/PostCard.astro";
+import { getFeedPosts, getLikedPostIds } from "../../lib/db";
+
+const user = Astro.locals.user!;
+const { department } = Astro.params;
+
+const posts = getFeedPosts().filter(p => p.department.toLowerCase().replace(/[^a-z0-9]/g, '') === department);
+const likedIds = getLikedPostIds(user.id);
+const likedSet = new Set(likedIds);
+---
+
+<AppLayout activeNav={`s/${department}`} user={user} title={`s/${department} · UniPulse`}>
+  <div class="page-header" style="margin-bottom: 1rem; border-bottom: none;">
+    <h1 class="page-title">s/{department}</h1>
+  </div>
+  
+  <div class="feed-posts">
+    {
+      !posts || posts.length === 0 ? (
+        <div class="empty-state">
+          <p class="empty-icon">📍</p>
+          <p class="empty-title">No posts yet for s/{department}</p>
+        </div>
+      ) : (
+        posts.map((post) => (
+          <PostCard
+            post={post}
+            isLiked={likedSet.has(post.id)}
+            isAdmin={Astro.locals.isAdmin}
+            currentUserId={user.id}
+          />
+        ))
+      )
+    }
+  </div>
+</AppLayout>

@@ -1,164 +1,217 @@
 ---
-import { getNews } from "../../lib/db";
-const latest = getNews().slice(0, 3);
+import { getEvents, getRegisteredEvents } from "../../lib/db";
+import { formatRelativeTime } from "../../lib/utils";
+
+const user = Astro.locals.user!;
+const events = getEvents().slice(0, 3);
+const reminders = getRegisteredEvents(user.id);
 ---
 
 <div class="panel-wrap">
-  <div class="search-wrap">
-    <svg
-      class="search-icon"
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      ><circle cx="11" cy="11" r="8"></circle><line
-        x1="21"
-        y1="21"
-        x2="16.65"
-        y2="16.65"></line></svg
-    >
-    <input
-      type="search"
-      placeholder="Search UniPulse…"
-      class="search-field"
-      disabled
-      title="Coming soon"
-    />
+  <div class="tabs-header">
+    <button class="tab-btn active" data-tab="events">Recent Events</button>
+    <button class="tab-btn" data-tab="reminders">Reminders</button>
   </div>
 
-  {
-    latest.length > 0 && (
-      <div class="panel-card">
-        <h3 class="panel-title">Campus News</h3>
-        <div class="news-list">
-          {latest.map((item) => (
-            <a href="/news" class="news-item">
-              <span class="news-hl">{item.title}</span>
-              <span class="news-date">
-                {new Date(item.created_at).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                  month: "short",
-                })}
-              </span>
-            </a>
-          ))}
-        </div>
-        <a href="/news" class="panel-more">
-          View all →
-        </a>
-      </div>
-    )
-  }
+  <div class="tab-content active" id="tab-events">
+    <div class="recent-list">
+      {events.length === 0 ? (
+        <div class="empty-text">No recent events.</div>
+      ) : (
+        events.map(event => (
+          <a href={`/search?q=${encodeURIComponent(event.title)}&tab=events`} class="recent-card">
+            <div class="recent-meta">
+              <span class="recent-sub">s/events</span>
+              <span class="recent-time">{formatRelativeTime(event.event_date)}</span>
+            </div>
+            <div class="recent-body">
+              <div class="recent-content">
+                <h4 class="recent-title">{event.title}</h4>
+                <span class="recent-link">{event.location}</span>
+              </div>
+              <div class="recent-thumb" style="background:var(--bg-3); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">📅</div>
+            </div>
+          </a>
+        ))
+      )}
+    </div>
+  </div>
 
-  <div class="panel-card">
-    <h3 class="panel-title">Posting Rules</h3>
+  <div class="tab-content" id="tab-reminders" hidden>
+    <div class="recent-list">
+      {reminders.length === 0 ? (
+        <div class="empty-text">You haven't registered for any events yet.</div>
+      ) : (
+        reminders.map(rem => (
+          <a href={`/events`} class="recent-card">
+            <div class="recent-meta">
+              <span class="recent-sub">s/events</span>
+              <span class="recent-time">{formatRelativeTime(rem.event_date)}</span>
+            </div>
+            <div class="recent-body">
+              <div class="recent-content">
+                <h4 class="recent-title">{rem.title}</h4>
+                <span class="recent-link">{rem.location}</span>
+              </div>
+              <div class="recent-thumb" style="background:var(--bg-3); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">📅</div>
+            </div>
+          </a>
+        ))
+      )}
+    </div>
+  </div>
+
+  <div class="panel-card mt-6">
+    <h3 class="panel-title" style="margin-bottom:.5rem;">Posting Rules</h3>
     <ul class="rules-list">
       <li>Max <strong>5 posts</strong> per day</li>
       <li><strong>15-min</strong> cooldown between posts</li>
-      <li>Resets at <strong>midnight</strong> (your time)</li>
+      <li>Resets at <strong>midnight</strong></li>
       <li>Keep it respectful</li>
     </ul>
   </div>
 
   <p class="panel-footer">UniPulse · Campus Edition</p>
 </div>
+
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = (btn as HTMLElement).dataset.tab;
+      
+      // Update buttons
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      
+      // Update contents
+      document.querySelectorAll('.tab-content').forEach(c => (c as HTMLElement).hidden = true);
+      const tab = document.getElementById(`tab-${target}`);
+      if (tab) tab.hidden = false;
+    });
+  });
+</script>
+
 <style>
   .panel-wrap {
-    padding: 1.25rem 1rem;
     display: flex;
     flex-direction: column;
+    padding-left: 1rem;
+  }
+  
+  .tabs-header {
+    display: flex;
     gap: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
   }
-  .search-wrap {
-    position: relative;
+  
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 0.5rem 0;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text-2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
   }
-  .search-icon {
-    position: absolute;
-    left: 0.75rem;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-3);
-    pointer-events: none;
+  
+  .tab-btn:hover {
+    color: var(--text-1);
   }
-  .search-field {
-    width: 100%;
-    background: var(--bg-2);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
-    font-family: var(--font);
-    font-size: 0.8125rem;
-    color: var(--text);
-    outline: none;
-    opacity: 0.6;
-    cursor: not-allowed;
+  
+  .tab-btn.active {
+    color: var(--text-1);
+    border-bottom-color: var(--accent);
   }
+  
+  .empty-text {
+    font-size: .875rem;
+    color: var(--text-2);
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  .recent-list { display: flex; flex-direction: column; gap: 1rem; }
+  
+  .recent-card {
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+  }
+  .recent-card:last-child { border-bottom: none; }
+  
+  .recent-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .5rem;
+  }
+  .recent-sub {
+    font-size: .75rem;
+    font-weight: 500;
+    color: var(--text-2);
+  }
+  .recent-time {
+    font-size: .65rem;
+    color: var(--accent);
+  }
+  
+  .recent-body {
+    display: flex;
+    gap: .75rem;
+  }
+  .recent-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .25rem;
+  }
+  .recent-title {
+    font-size: .875rem;
+    font-weight: 500;
+    color: var(--text-1);
+    line-height: 1.3;
+  }
+  .recent-link {
+    font-size: .65rem;
+    color: var(--accent);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .recent-thumb {
+    width: 60px;
+    height: 45px;
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+  }
+
   .panel-card {
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: 1rem;
   }
   .panel-title {
-    font-size: 0.875rem;
+    font-size: .875rem;
     font-weight: 600;
-    color: var(--text);
-    margin-bottom: 0.75rem;
-  }
-  .news-list {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-  .news-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 0.5rem;
-    padding: 0.375rem 0.25rem;
-    border-radius: var(--radius-sm);
-    text-decoration: none;
-    transition: background var(--ease);
-  }
-  .news-item:hover {
-    background: var(--bg-2);
-  }
-  .news-hl {
-    font-size: 0.8125rem;
-    color: var(--text-2);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    flex: 1;
-  }
-  .news-date {
-    font-size: 0.75rem;
-    color: var(--text-3);
-    white-space: nowrap;
-  }
-  .panel-more {
-    display: block;
-    margin-top: 0.625rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    color: var(--accent);
-    text-decoration: none;
-  }
-  .panel-more:hover {
-    text-decoration: underline;
+    color: var(--text-1);
   }
   .rules-list {
     list-style: none;
     display: flex;
     flex-direction: column;
-    gap: 0.375rem;
+    gap: .375rem;
   }
   .rules-list li {
-    font-size: 0.75rem;
+    font-size: .75rem;
     color: var(--text-2);
-    padding-left: 0.875rem;
+    padding-left: .875rem;
     position: relative;
   }
   .rules-list li::before {
@@ -168,14 +221,13 @@ const latest = getNews().slice(0, 3);
     color: var(--text-3);
   }
   .rules-list strong {
-    color: var(--text);
+    color: var(--text-1);
     font-weight: 500;
   }
   .panel-footer {
-    font-size: 0.75rem;
+    font-size: .75rem;
     color: var(--text-3);
     text-align: center;
-    margin-top: auto;
-    padding-top: 0.5rem;
+    margin-top: 1.5rem;
   }
 </style>

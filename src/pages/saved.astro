@@ -1,0 +1,38 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import PostCard from "../components/PostCard.astro";
+import { getSavedPosts, getUserVotes, getSavedPostIds, getFollowingIds } from "../lib/db";
+
+const user = Astro.locals.user!;
+const posts = getSavedPosts(user.id);
+
+const userVotes = getUserVotes(user.id);
+const savedIds = getSavedPostIds(user.id);
+const followingIds = getFollowingIds(user.id);
+---
+
+<AppLayout activeNav="saved" user={user} title="Saved Posts · UniPulse">
+  <div class="page-header" style="margin-bottom: 1rem; border-bottom: none;"><h1 class="page-title">Saved Posts</h1></div>
+  
+  <div class="feed-posts">
+    {
+      !posts || posts.length === 0 ? (
+        <div class="empty-state">
+          <p class="empty-icon">🔖</p>
+          <p class="empty-title">No saved posts yet</p>
+        </div>
+      ) : (
+        posts.map((post) => (
+          <PostCard
+            post={post}
+            userVote={userVotes[post.id] || 0}
+            isSaved={savedIds.has(post.id)}
+            isFollowing={followingIds.has(post.author_id)}
+            isAdmin={Astro.locals.isAdmin}
+            currentUserId={user.id}
+          />
+        ))
+      )
+    }
+  </div>
+</AppLayout>
