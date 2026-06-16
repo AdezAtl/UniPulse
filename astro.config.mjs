@@ -5,4 +5,8 @@ export default defineConfig({
   output: 'server',
   adapter: node({ mode: 'standalone' }),
   security: { checkOrigin: true },
+  vite: {
+    ssr: {},
+    optimizeDeps: {}
+  }
 });

@@ -1,7 +1,7 @@
 ---
-import type { AdminPostView } from '../../lib/database.types';
+import type { PostWithMeta } from '../../lib/db';
 import { formatFullDate, truncate } from '../../lib/utils';
-interface Props { posts: AdminPostView[]; compact?: boolean; }
+interface Props { posts: PostWithMeta[]; compact?: boolean; }
 const { posts, compact = false } = Astro.props;
 ---
 
@@ -92,9 +92,9 @@ const { posts, compact = false } = Astro.props;
 </div>
 
 <script>
-  let editingId = null;
+  let editingId: string | null = null;
 
-  async function postAction(action, postId, content) {
+  async function postAction(action: string, postId: string, content?: string) {
     const res = await fetch('/api/admin/post', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -105,38 +105,51 @@ const { posts, compact = false } = Astro.props;
   }
 
   document.querySelectorAll('[data-post-action]').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const { postAction: action, postId, content } = btn.dataset;
+    btn.addEventListener('click', () => {
+      const { postAction: action, postId, content } = (btn as HTMLElement).dataset;
 
       if (action === 'edit') {
-        editingId = postId;
-        const ta = document.getElementById('pedit-content');
-        ta.value = content ?? '';
-        document.getElementById('pedit-chars').textContent = String((content ?? '').length);
-        document.getElementById('posts-edit-modal').hidden = false;
-        ta.focus();
+        editingId = postId || null;
+        const ta = document.getElementById('pedit-content') as HTMLTextAreaElement;
+        if (ta) {
+          ta.value = content ?? '';
+          const peditChars = document.getElementById('pedit-chars');
+          if (peditChars) peditChars.textContent = String((content ?? '').length);
+          const modal = document.getElementById('posts-edit-modal');
+          if (modal) modal.hidden = false;
+          ta.focus();
+        }
         return;
       }
 
       const msgs = { delete: 'Soft-delete this post?', restore: 'Restore this post?', flag: 'Flag for review?', unflag: 'Remove flag?' };
-      if (confirm(msgs[action] ?? 'Continue?')) {
-        btn.disabled = true;
-        await postAction(action, postId);
+      if (confirm(msgs[action as keyof typeof msgs] ?? 'Continue?')) {
+        (btn as HTMLButtonElement).disabled = true;
+        postAction(action!, postId!);
       }
     });
   });
 
-  const ta = document.getElementById('pedit-content');
-  ta?.addEventListener('input', () => { document.getElementById('pedit-chars').textContent = String(ta.value.length); });
+  const ta = document.getElementById('pedit-content') as HTMLTextAreaElement | null;
+  ta?.addEventListener('input', () => { 
+    const chars = document.getElementById('pedit-chars');
+    if (chars) chars.textContent = String(ta.value.length); 
+  });
 
-  const closeModal = () => { document.getElementById('posts-edit-modal').hidden = true; editingId = null; };
+  const closeModal = () => { 
+    const modal = document.getElementById('posts-edit-modal');
+    if (modal) modal.hidden = true; 
+    editingId = null; 
+  };
   document.getElementById('pedit-close')?.addEventListener('click',  closeModal);
   document.getElementById('pedit-cancel')?.addEventListener('click', closeModal);
   document.getElementById('pedit-save')?.addEventListener('click', async () => {
-    if (!editingId) return;
+    if (!editingId || !ta) return;
     const val = ta.value.trim();
-    if (!val) { alert('Content cannot be empty.'); return; }
-    document.getElementById('posts-edit-modal').hidden = true;
+    if (!val) return;
+    
+    const modal = document.getElementById('posts-edit-modal');
+    if (modal) modal.hidden = true;
     await postAction('edit', editingId, val);
   });
 </script>

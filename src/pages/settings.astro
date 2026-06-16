@@ -369,36 +369,39 @@ const errMsg = Astro.url.searchParams.get("error");
 
   // Avatar logic
   const uploadAvatarBtn = document.getElementById("upload-avatar-btn");
-  const avatarUpload = document.getElementById("avatar-upload");
+  const avatarUpload = document.getElementById("avatar-upload") as HTMLInputElement | null;
   const removeAvatarBtn = document.getElementById("remove-avatar-btn");
-  const avatarUrlInput = document.getElementById("avatar_url_input");
-  const avatarPreviewImg = document.getElementById("avatar-preview-img");
+  const avatarUrlInput = document.getElementById("avatar_url_input") as HTMLInputElement | null;
+  const avatarPreviewImg = document.getElementById("avatar-preview-img") as HTMLImageElement | null;
   const avatarPreviewInitial = document.getElementById("avatar-preview-initial");
   const avatarStatus = document.getElementById("avatar-upload-status");
 
   if (avatarUrlInput && avatarUrlInput.value) {
-    removeAvatarBtn.style.display = 'inline-flex';
+    if (removeAvatarBtn) removeAvatarBtn.style.display = 'inline-flex';
   }
 
   uploadAvatarBtn?.addEventListener('click', () => avatarUpload?.click());
   
   removeAvatarBtn?.addEventListener('click', () => {
-    avatarUrlInput.value = '';
+    if (avatarUrlInput) avatarUrlInput.value = '';
     if (avatarPreviewImg) {
       avatarPreviewImg.style.display = 'none';
       avatarPreviewImg.src = '';
     }
     if (avatarPreviewInitial) avatarPreviewInitial.style.display = 'inline';
-    removeAvatarBtn.style.display = 'none';
+    if (removeAvatarBtn) removeAvatarBtn.style.display = 'none';
   });
 
   avatarUpload?.addEventListener('change', async (e) => {
-    const file = e.target.files?.[0];
+    const target = e.target as HTMLInputElement;
+    const file = target.files?.[0];
     if (!file) return;
 
-    avatarStatus.textContent = "Uploading...";
-    avatarStatus.style.display = "inline";
-    avatarStatus.style.color = "var(--text-2)";
+    if (avatarStatus) {
+      avatarStatus.textContent = "Uploading...";
+      avatarStatus.style.display = "inline";
+      avatarStatus.style.color = "var(--text-2)";
+    }
 
     const formData = new FormData();
     formData.append("file", file);
@@ -413,19 +416,23 @@ const errMsg = Astro.url.searchParams.get("error");
       const data = await res.json();
 
       // Update preview and hidden input
-      avatarUrlInput.value = data.url;
+      if (avatarUrlInput) avatarUrlInput.value = data.url;
       if (avatarPreviewImg) {
         avatarPreviewImg.src = data.url;
         avatarPreviewImg.style.display = 'block';
       }
       if (avatarPreviewInitial) avatarPreviewInitial.style.display = 'none';
-      removeAvatarBtn.style.display = 'inline-flex';
+      if (removeAvatarBtn) removeAvatarBtn.style.display = 'inline-flex';
       
-      avatarStatus.textContent = "Click 'Save changes' below to apply";
-      avatarStatus.style.color = "var(--accent)";
+      if (avatarStatus) {
+        avatarStatus.textContent = "Click 'Save changes' below to apply";
+        avatarStatus.style.color = "var(--accent)";
+      }
     } catch (err) {
-      avatarStatus.textContent = "Upload failed.";
-      avatarStatus.style.color = "var(--danger-text)";
+      if (avatarStatus) {
+        avatarStatus.textContent = "Upload failed.";
+        avatarStatus.style.color = "var(--danger-text)";
+      }
     }
   });
 

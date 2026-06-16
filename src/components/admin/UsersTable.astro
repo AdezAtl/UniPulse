@@ -1,5 +1,5 @@
 ---
-import type { User } from '../../lib/database.types';
+import type { User } from '../../lib/db';
 import { formatDate } from '../../lib/utils';
 interface Props { users: User[]; currentAdminId: string; }
 const { users, currentAdminId } = Astro.props;
@@ -81,9 +81,9 @@ const { users, currentAdminId } = Astro.props;
 </div>
 
 <script>
-  let pendingBanId = null;
+  let pendingBanId: string | null = null;
 
-  async function userAction(action, userId, reason) {
+  async function userAction(action: string, userId: string, reason?: string) {
     const res = await fetch('/api/admin/user', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -95,30 +95,39 @@ const { users, currentAdminId } = Astro.props;
 
   document.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', async () => {
-      const { action, userId } = btn.dataset;
+      const { action, userId } = (btn as HTMLElement).dataset;
+
       if (action === 'ban') {
-        pendingBanId = userId;
-        document.getElementById('ban-modal').hidden = false;
+        pendingBanId = userId || null;
+        const modal = document.getElementById('ban-modal');
+        if (modal) modal.hidden = false;
         return;
       }
       const msgs = { promote: 'Promote this user to admin?', demote: 'Demote this admin to user?', unban: 'Unban this user?' };
-      if (confirm(msgs[action] ?? 'Continue?')) {
-        btn.disabled = true;
-        await userAction(action, userId);
+      if (confirm(msgs[action as keyof typeof msgs] ?? 'Continue?')) {
+        (btn as HTMLButtonElement).disabled = true;
+        await userAction(action!, userId!);
       }
     });
   });
 
-  document.getElementById('ban-cancel')?.addEventListener('click', () => {
-    document.getElementById('ban-modal').hidden = true;
-    pendingBanId = null;
-  });
+  const closeModal = () => { 
+    const modal = document.getElementById('ban-modal');
+    if (modal) modal.hidden = true; 
+    pendingBanId = null; 
+  };
+
+  document.getElementById('ban-cancel')?.addEventListener('click', closeModal);
 
   document.getElementById('ban-confirm')?.addEventListener('click', async () => {
     if (!pendingBanId) return;
-    const reason = document.getElementById('ban-reason').value.trim();
-    document.getElementById('ban-modal').hidden = true;
-    await userAction('ban', pendingBanId, reason || undefined);
+    const reasonInput = document.getElementById('ban-reason') as HTMLInputElement | null;
+    const reason = reasonInput ? reasonInput.value.trim() : '';
+    if (!reason) { alert('A reason is required.'); return; }
+    
+    const modal = document.getElementById('ban-modal');
+    if (modal) modal.hidden = true;
+    await userAction('ban', pendingBanId, reason);
   });
 </script>
 

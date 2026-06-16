@@ -1,6 +1,6 @@
 ---
-import type { LocalUser } from '../../lib/database.types';
-interface Props { activeNav: string; user: LocalUser | null; }
+import type { User } from '../../lib/db';
+interface Props { activeNav: string; user: User | null; }
 const { activeNav, user } = Astro.props;
 ---
 

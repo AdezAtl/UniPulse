@@ -3,11 +3,11 @@ import BaseLayout from './BaseLayout.astro';
 import Header from '../components/layout/Header.astro';
 import Sidebar from '../components/feed/Sidebar.astro';
 import RightPanel from '../components/feed/RightPanel.astro';
-import type { LocalUser } from '../lib/database.types';
+import type { User } from '../lib/db';
 interface Props {
   title?: string;
   activeNav?: string;
-  user: LocalUser | null;
+  user: User | null;
   showRightPanel?: boolean;
 }
 const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;

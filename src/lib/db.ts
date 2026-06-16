@@ -6,6 +6,7 @@ import Database from 'better-sqlite3';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 
+
 // ── Database file location ────────────────────────────────────────────────────
 // Stored at <project-root>/data/unipulse.db
 // The data/ folder is gitignored so the DB stays local.
@@ -215,7 +216,7 @@ export function newId(): string {
 export type UserRole = 'user' | 'admin';
 
 export interface User {
-  id: string; email: string; username: string; pulse_id: string;
+  id: string; email?: string; username: string; pulse_id: string;
   full_name: string | null; department: string; level: string;
   avatar_url: string | null; role: UserRole; is_banned: boolean; created_at: string;
 }
@@ -229,6 +230,7 @@ export interface PostWithMeta extends Post {
   author_id: string; username: string; pulse_id: string; full_name: string | null;
   department: string; level: string; avatar_url: string | null;
   author_role: UserRole; like_count: number; comment_count: number;
+  is_banned?: boolean;
 }
 
 export interface Resource {
@@ -286,8 +288,12 @@ function normaliseUser(row: any): User {
 }
 
 function normalisePost(row: any): PostWithMeta {
-  if (!row) return row;
-  return { ...row, is_flagged: row.is_flagged === 1, is_deleted: row.is_deleted === 1 };
+  return {
+    ...row,
+    is_flagged: Boolean(row.is_flagged),
+    is_deleted: Boolean(row.is_deleted),
+    is_banned: row.is_banned !== undefined ? Boolean(row.is_banned) : false,
+  };
 }
 
 // ── User queries ──────────────────────────────────────────────────────────────
@@ -317,10 +323,8 @@ export function createUser(data: {
   password_hash: string; full_name: string | null;
   department: string; level: string;
 }): User {
-  db.prepare(`
-    INSERT INTO users (id, email, username, pulse_id, password_hash, full_name, department, level)
-    VALUES (@id, @email, @username, @pulse_id, @password_hash, @full_name, @department, @level)
-  `).run(data);
+  db.prepare('INSERT INTO users (id, email, username, pulse_id, password_hash, full_name, department, level) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+    .run(data.id, data.email, data.username, data.pulse_id, data.password_hash, data.full_name, data.department, data.level);
   return getUserById(data.id)!;
 }
 
@@ -344,7 +348,8 @@ export function setUserBanned(id: string, banned: boolean) {
 }
 
 export function getAllUsers(): User[] {
-  return (db.prepare('SELECT * FROM users ORDER BY created_at DESC').all() as any[]).map(normaliseUser);
+  const rows = db.prepare('SELECT * FROM users ORDER BY created_at DESC').all() as any[];
+  return rows.map(normaliseUser);
 }
 
 export function getPasswordHash(userId: string): string | null {
@@ -405,7 +410,7 @@ const POST_WITH_META_SQL = `
     p.id, p.content, p.media_url, p.is_flagged, p.is_deleted, p.created_at,
     p.user_id AS author_id,
     u.username, u.pulse_id, u.full_name, u.department, u.level,
-    u.avatar_url, u.role AS author_role,
+    u.avatar_url, u.role AS author_role, u.is_banned,
     IFNULL(SUM(l.value), 0) AS like_count,
     (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND is_deleted = 0) AS comment_count
   FROM posts p

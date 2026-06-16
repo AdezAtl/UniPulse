@@ -1,14 +1,14 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
 import PostCard from "../components/PostCard.astro";
-import { searchAll, getLikedPostIds } from "../lib/db";
+import { searchAll, getLikedPostIds, type SearchResults } from "../lib/db";
 import { formatRelativeTime } from "../lib/utils";
 
 const user = Astro.locals.user!;
 const query = Astro.url.searchParams.get("q") || "";
 const activeTab = Astro.url.searchParams.get("tab") || "all";
 
-let results = { users: [], posts: [], resources: [], news: [], events: [] };
+let results: SearchResults = { users: [], posts: [], resources: [], news: [], events: [] };
 let likedSet = new Set<string>();
 
 if (query.trim()) {

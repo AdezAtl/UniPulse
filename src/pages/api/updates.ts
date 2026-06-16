@@ -1,8 +1,7 @@
 import type { APIRoute } from 'astro';
-import { getUnreadNotificationCount, getLastPostTime } from '../../lib/db';
-import { db } from '../../lib/db';
+import { getUnreadNotificationCount, db } from '../../lib/db';
 
-export const GET: APIRoute = async ({ request, locals }) => {
+export const GET: APIRoute = async ({ locals }) => {
   if (!locals.user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 
   try {

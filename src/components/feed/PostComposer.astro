@@ -1,7 +1,7 @@
 ---
-import type { LocalUser } from '../../lib/database.types';
+import type { User } from '../../lib/db';
 import { DAILY_POST_LIMIT } from '../../lib/utils';
-interface Props { user: LocalUser; todayCount: number; cooldownSecs: number; isAdmin?: boolean; }
+interface Props { user: User; todayCount: number; cooldownSecs: number; isAdmin?: boolean; }
 const { user, todayCount, cooldownSecs, isAdmin } = Astro.props;
 const remaining  = isAdmin ? Infinity : DAILY_POST_LIMIT - todayCount;
 const atLimit    = remaining <= 0;

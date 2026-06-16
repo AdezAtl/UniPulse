@@ -1,7 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
-import type { LocalUser } from '../lib/database.types';
-interface Props { title?: string; user: LocalUser | null; }
+import type { User } from '../lib/db';
+interface Props { title?: string; user: User | null; }
 const { title = 'Admin · UniPulse', user } = Astro.props;
 const activeTab = new URL(Astro.request.url).searchParams.get('tab') ?? 'overview';
 const nav = [

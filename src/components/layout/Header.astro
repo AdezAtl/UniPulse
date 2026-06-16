@@ -1,8 +1,8 @@
 ---
-import type { LocalUser } from '../../lib/database.types';
+import type { User } from '../../lib/db';
 
 interface Props {
-  user: LocalUser | null;
+  user: User | null;
 }
 const { user } = Astro.props;
 ---

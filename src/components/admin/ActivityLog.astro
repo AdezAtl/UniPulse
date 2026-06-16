@@ -1,9 +1,9 @@
 ---
-import type { AdminLog } from '../../lib/database.types';
+import type { AdminLog } from '../../lib/db';
 import { formatRelativeTime } from '../../lib/utils';
 
-interface LogWithAdmin extends AdminLog { admin?: { username: string; pulse_id: string } | null; }
-interface Props { logs: LogWithAdmin[]; compact?: boolean; }
+
+interface Props { logs: AdminLog[]; compact?: boolean; }
 const { logs, compact = false } = Astro.props;
 
 const meta: Record<string, { label: string; cls: string; icon: string }> = {
@@ -39,7 +39,7 @@ const meta: Record<string, { label: string; cls: string; icon: string }> = {
               <span class="badge badge-gray" style="font-size:.65rem">{log.target_type}</span>
             </div>
             <div class="log-meta">
-              By <strong>@{log.admin?.username ?? 'unknown'}</strong>
+              By <strong>@{log.admin_username ?? 'unknown'}</strong>
               {' · '}<code class="pulse-id">{log.target_id.slice(0, 8)}…</code>
               {!compact && log.metadata && Object.keys(log.metadata).length > 0 && (
                 <span class="log-extra">
