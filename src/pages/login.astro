@@ -1,9 +1,11 @@
 ---
 import AuthLayout from "../layouts/AuthLayout.astro";
+import Headerr from "@/components/layout/Headerr.astro";
 const error = Astro.url.searchParams.get("error");
 const redirect = Astro.url.searchParams.get("redirect") ?? "/feed";
 ---
 
+<Headerr />
 <AuthLayout title="Sign In · UniPulse">
   <h2 style="font-size:1rem;font-weight:600;margin-bottom:.25rem">
     Welcome back

@@ -1,5 +1,6 @@
 ---
 import AuthLayout from "../layouts/AuthLayout.astro";
+import Headerr from "@/components/layout/Headerr.astro";
 const DEPARTMENTS = [
   "Computer Science",
   "Engineering",
@@ -22,6 +23,7 @@ const LEVELS = [
 ];
 ---
 
+<Headerr />
 <AuthLayout title="Create Account · UniPulse">
   <h2 style="font-size:1rem;font-weight:600;margin-bottom:.25rem">
     Create your account
