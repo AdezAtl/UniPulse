@@ -15,10 +15,29 @@ export const GET: APIRoute = async ({ locals }) => {
     const postRow = db.prepare(`SELECT created_at FROM posts WHERE is_deleted = 0 ORDER BY created_at DESC LIMIT 1`).get() as any;
     const latestPostTime = postRow ? postRow.created_at : null;
 
+    // Get details of latest unread notifications (up to 5)
+    const latestNotifications = db.prepare(`
+      SELECT message, link 
+      FROM notifications 
+      WHERE user_id = ? AND is_read = 0 
+      ORDER BY created_at DESC LIMIT 5
+    `).all(locals.user.id) as any[];
+
+    // Get details of latest unread messages (up to 5)
+    const latestMessages = db.prepare(`
+      SELECT m.content, u.username 
+      FROM messages m 
+      JOIN users u ON u.id = m.sender_id 
+      WHERE m.receiver_id = ? AND m.is_read = 0 
+      ORDER BY m.created_at DESC LIMIT 5
+    `).all(locals.user.id) as any[];
+
     return new Response(JSON.stringify({ 
       unreadNotifications,
       unreadMessages,
-      latestPostTime
+      latestPostTime,
+      latestNotifications,
+      latestMessages
     }), {
       status: 200, headers: { 'Content-Type': 'application/json' }
     });

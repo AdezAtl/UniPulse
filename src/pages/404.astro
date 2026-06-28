@@ -1,28 +1,704 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import Headerr from '../components/layout/Headerr.astro';
 ---
-<BaseLayout title="404 · UniPulse">
-  <div class="not-found">
-    <p class="code">404</p>
-    <h1 class="title">Page not found</h1>
-    <p class="sub">This page doesn't exist or you don't have access to it.</p>
-    <a href="/feed" class="btn btn-primary" style="padding:.625rem 1.5rem;border-radius:var(--radius-lg)">Back to Feed</a>
+
+<BaseLayout title="404 · UniPulse" description="Uh-Oh, it seems you got lost!">
+  <div class="not-found-main">
+    <Headerr />
+    
+    <div class="not-found-container">
+      <section class="hero-section">
+        <!-- Left: Interactive Vector Illustration -->
+        <div class="visual-side">
+          <svg viewBox="0 0 500 500" class="student-svg" aria-hidden="true">
+            <!-- Gradients and Filters -->
+            <defs>
+              <linearGradient id="blobGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.15" />
+                <stop offset="100%" stop-color="var(--accent-2)" stop-opacity="0.05" />
+              </linearGradient>
+              <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="var(--accent)" />
+                <stop offset="100%" stop-color="var(--accent-2)" />
+              </linearGradient>
+              <filter id="shadowFilter" x="-10%" y="-10%" width="120%" height="120%">
+                <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="var(--accent)" flood-opacity="0.12" />
+              </filter>
+            </defs>
+
+            <!-- Blob Background -->
+            <path id="svg-blob" d="M390,240C390,320,330,390,250,390C170,390,110,320,110,240C110,160,170,110,250,110C330,110,390,160,390,240Z" fill="url(#blobGradient)" filter="url(#shadowFilter)" style="transition: transform 0.3s ease-out;" />
+
+            <!-- Parallax Stars (twinkling) -->
+            <g id="star-1" class="parallax-star">
+              <path d="M120,120 L123,127 L130,130 L123,133 L120,140 L117,133 L110,130 L117,127 Z" fill="var(--accent)" opacity="0.6" />
+            </g>
+            <g id="star-2" class="parallax-star">
+              <path d="M400,160 L402,164 L406,165 L402,166 L400,170 L398,166 L394,165 L398,164 Z" fill="var(--accent-2)" opacity="0.5" />
+            </g>
+            <g id="star-3" class="parallax-star">
+              <path d="M140,340 L142,344 L146,345 L142,346 L140,350 L138,346 L134,345 L138,344 Z" fill="var(--accent)" opacity="0.4" />
+            </g>
+
+            <!-- Parallax Clouds -->
+            <path id="cloud-1" class="parallax-cloud" d="M70,200 C80,180 110,180 120,200 C130,190 150,200 145,215 C145,220 65,220 70,200 Z" fill="var(--bg-3)" opacity="0.85" />
+            <path id="cloud-2" class="parallax-cloud" d="M370,290 C380,275 405,275 415,290 C425,280 440,290 435,305 C435,310 365,310 370,290 Z" fill="var(--bg-3)" opacity="0.7" />
+
+            <!-- Parallax Floating Pages -->
+            <g id="page-1" class="parallax-page" style="transform-origin: 165px 100px;">
+              <rect x="150" y="80" width="30" height="40" rx="3" fill="var(--bg)" stroke="var(--border-2)" stroke-width="1" />
+              <line x1="155" y1="90" x2="175" y2="90" stroke="var(--text-3)" stroke-width="1.5" />
+              <line x1="155" y1="96" x2="170" y2="96" stroke="var(--text-3)" stroke-width="1.5" />
+              <line x1="155" y1="102" x2="175" y2="102" stroke="var(--text-3)" stroke-width="1.5" />
+            </g>
+            <g id="page-2" class="parallax-page" style="transform-origin: 362px 257px;">
+              <rect x="350" y="240" width="25" height="35" rx="3" fill="var(--bg)" stroke="var(--border-2)" stroke-width="1" />
+              <line x1="355" y1="248" x2="370" y2="248" stroke="var(--text-3)" stroke-width="1.5" />
+              <line x1="355" y1="254" x2="365" y2="254" stroke="var(--text-3)" stroke-width="1.5" />
+              <line x1="355" y1="260" x2="370" y2="260" stroke="var(--text-3)" stroke-width="1.5" />
+            </g>
+
+            <!-- Student Figure -->
+            <g id="student">
+              <!-- Shadow beneath character -->
+              <ellipse cx="250" cy="415" rx="65" ry="10" fill="var(--border-2)" opacity="0.4" />
+
+              <!-- Legs -->
+              <path d="M232,350 L226,408 L238,408 L242,350 Z" fill="#334155" />
+              <path d="M268,350 L274,408 L262,408 L258,350 Z" fill="#334155" />
+              <!-- Shoes -->
+              <path d="M226,408 C220,408 212,410 212,414 C212,417 236,417 236,410 Z" fill="#0f172a" />
+              <path d="M274,408 C280,408 288,410 288,414 C288,417 264,417 264,410 Z" fill="#0f172a" />
+
+              <!-- Torso (Hoodie/T-shirt) -->
+              <path d="M210,285 C210,245 290,245 290,285 L278,355 L222,355 Z" fill="var(--accent)" style="transition: fill 0.3s ease;" />
+              <!-- Collar details -->
+              <path d="M236,263 C242,268 258,268 264,263 Z" fill="var(--bg-3)" />
+
+              <!-- Student Head Group (for mouse tracking translation/rotation) -->
+              <g id="student-head" style="transform-origin: 250px 240px; transition: transform 0.1s ease-out;">
+                <!-- Neck -->
+                <rect x="242" y="240" width="16" height="20" fill="#fbcfe8" rx="2" />
+                <!-- Face -->
+                <circle cx="250" cy="215" r="32" fill="#fbcfe8" />
+                
+                <!-- Eyes Group (triggers random blinks) -->
+                <g id="student-eyes" style="transition: transform 0.1s ease;">
+                  <!-- Left Eye Background -->
+                  <ellipse cx="238" cy="212" rx="5.5" ry="6.5" fill="#fff" />
+                  <!-- Right Eye Background -->
+                  <ellipse cx="262" cy="212" rx="5.5" ry="6.5" fill="#fff" />
+                  
+                  <!-- Pupils (for eye tracking movement) -->
+                  <circle id="pupil-l" cx="238" cy="212" r="3.2" fill="#1e293b" style="transition: transform 0.05s ease-out;" />
+                  <circle id="pupil-r" cx="262" cy="212" r="3.2" fill="#1e293b" style="transition: transform 0.05s ease-out;" />
+                  
+                  <!-- Eye Highlights -->
+                  <circle cx="239.5" cy="210.5" r="0.8" fill="#fff" />
+                  <circle cx="263.5" cy="210.5" r="0.8" fill="#fff" />
+                </g>
+
+                <!-- Eyebrows -->
+                <path d="M231,203 C234,201 241,202 243,205" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round" />
+                <path d="M269,203 C266,201 259,202 257,205" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round" />
+
+                <!-- Cheek blush -->
+                <circle cx="224" cy="222" r="3.5" fill="#f43f5e" opacity="0.25" />
+                <circle cx="276" cy="222" r="3.5" fill="#f43f5e" opacity="0.25" />
+
+                <!-- Nose -->
+                <path d="M250,214 L248,220 L252,220 Z" fill="#f472b6" />
+
+                <!-- Confused/Curious Mouth -->
+                <path d="M245,227 Q250,223 255,227" stroke="#1e293b" stroke-width="2" fill="none" stroke-linecap="round" />
+
+                <!-- Hair -->
+                <path d="M216,210 C214,190 225,175 250,175 C275,175 286,190 284,210 C288,195 280,180 272,180 C264,180 258,185 250,185 C242,185 236,180 228,180 C220,180 212,195 216,210 Z" fill="#312e81" />
+              </g>
+
+              <!-- Arms & Tablet/Book -->
+              <!-- Left Arm -->
+              <path d="M220,285 C198,305 208,328 226,320" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" fill="none" style="transition: stroke 0.3s ease;" />
+              <path d="M226,320 C231,318 235,317 238,320" stroke="#fbcfe8" stroke-width="7" stroke-linecap="round" fill="none" />
+              
+              <!-- Right Arm -->
+              <path d="M280,285 C302,305 292,328 274,320" stroke="var(--accent)" stroke-width="11" stroke-linecap="round" fill="none" style="transition: stroke 0.3s ease;" />
+              <path d="M274,320 C269,318 265,317 262,320" stroke="#fbcfe8" stroke-width="7" stroke-linecap="round" fill="none" />
+
+              <!-- Open Book -->
+              <g id="held-book">
+                <!-- Book Cover -->
+                <path d="M232,321 L230,338 L250,344 L270,338 L268,321 Z" fill="var(--accent-2)" style="transition: fill 0.3s ease;" />
+                <!-- Pages Left -->
+                <path d="M234,319 L232,335 L250,340 L250,323 Z" fill="#f8fafc" />
+                <!-- Pages Right -->
+                <path d="M266,319 L268,335 L250,340 L250,323 Z" fill="#f1f5f9" />
+                <!-- Page lines simulating text -->
+                <line x1="238" y1="325" x2="246" y2="327" stroke="#cbd5e1" stroke-width="1.5" />
+                <line x1="238" y1="330" x2="246" y2="332" stroke="#cbd5e1" stroke-width="1.5" />
+                <line x1="254" y1="327" x2="262" y2="325" stroke="#cbd5e1" stroke-width="1.5" />
+                <line x1="254" y1="332" x2="262" y2="330" stroke="#cbd5e1" stroke-width="1.5" />
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Right: Text Content & Interactive Widget Pill -->
+        <div class="text-side">
+          <h1 class="error-code">404</h1>
+          <h2 class="error-title">Uh-Oh, it seems you got lost!</h2>
+          <p class="error-sub">This page doesn't exist, has been moved, or you don't have access to the campus files.</p>
+          
+          <a href="/feed" class="btn btn-primary btn-large-pill">Take me back</a>
+
+          <!-- Interactive Color Swapper + Counter Pill -->
+          <div class="interactive-pill">
+            <!-- Palette Selector -->
+            <div class="color-selector">
+              <span class="color-dot active" data-accent="#6366f1" data-accent-2="#8b5cf6" style="background:#6366f1;" title="Indigo"></span>
+              <span class="color-dot" data-accent="#0ea5e9" data-accent-2="#0d9488" style="background:#0ea5e9;" title="Ocean"></span>
+              <span class="color-dot" data-accent="#10b981" data-accent-2="#059669" style="background:#10b981;" title="Forest"></span>
+              <span class="color-dot" data-accent="#f97316" data-accent-2="#e11d48" style="background:#f97316;" title="Sunset"></span>
+              <span class="color-dot" data-accent="#ec4899" data-accent-2="#be185d" style="background:#ec4899;" title="Rose"></span>
+              <span class="color-dot" data-accent="#64748b" data-accent-2="#334155" style="background:#64748b;" title="Charcoal"></span>
+            </div>
+
+            <div class="pill-divider"></div>
+
+            <!-- Interactive View Counter (Increment on click) -->
+            <div class="views-counter" id="views-counter-btn" title="Click to interact!">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="eye-icon">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3" fill="currentColor" fill-opacity="0.1" id="eye-pupil-icon"></circle>
+              </svg>
+              <span id="view-count-text">4764</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bottom: Helpful Campus Navigation Cards -->
+      <section class="explore-section">
+        <h3 class="explore-header">Explore Campus Hubs</h3>
+        <div class="cards-grid">
+          <a href="/feed" class="explore-card">
+            <span class="card-icon">▦</span>
+            <div class="card-title">
+              The Common Room
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+            <p class="card-desc">Head back to the student feed to read, write, and see recent student pulses and campus announcements.</p>
+          </a>
+
+          <a href="/resources" class="explore-card">
+            <span class="card-icon">◫</span>
+            <div class="card-title">
+              Resource Vault
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+            <p class="card-desc">Find student-shared PDFs, notes, templates, and helpful lecture references uploaded by your cohort.</p>
+          </a>
+
+          <a href="/events" class="explore-card">
+            <span class="card-icon">◎</span>
+            <div class="card-title">
+              Events Board
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </div>
+            <p class="card-desc">Browse local university meetups, clubs, study group sessions, and campus social highlights.</p>
+          </a>
+        </div>
+      </section>
+    </div>
   </div>
 </BaseLayout>
 
+<script>
+  // Mouse Tracking & Parallax Interactions
+  const svg = document.querySelector('.student-svg');
+  const head = document.getElementById('student-head');
+  const leftPupil = document.getElementById('pupil-l');
+  const rightPupil = document.getElementById('pupil-r');
+  const blob = document.getElementById('svg-blob');
+  
+  const cloud1 = document.getElementById('cloud-1');
+  const cloud2 = document.getElementById('cloud-2');
+  const page1 = document.getElementById('page-1');
+  const page2 = document.getElementById('page-2');
+  const star1 = document.getElementById('star-1');
+  const star2 = document.getElementById('star-2');
+  const star3 = document.getElementById('star-3');
+
+  if (svg) {
+    window.addEventListener('mousemove', (e) => {
+      const { clientX, clientY } = e;
+      const rect = svg.getBoundingClientRect();
+      const svgCenterX = rect.left + rect.width / 2;
+      const svgCenterY = rect.top + rect.height / 2;
+
+      const dx = clientX - svgCenterX;
+      const dy = clientY - svgCenterY;
+
+      // Dampen mouse range for organic movement
+      const dampening = 350;
+      const nx = Math.max(-1, Math.min(1, dx / dampening));
+      const ny = Math.max(-1, Math.min(1, dy / dampening));
+
+      // Head turn (translate & rotate slightly)
+      if (head) {
+        const hx = nx * 10;
+        const hy = ny * 8;
+        const rotate = nx * 7;
+        head.style.transform = `translate(${hx}px, ${hy}px) rotate(${rotate}deg)`;
+      }
+
+      // Pupil movement inside eye boundary
+      if (leftPupil && rightPupil) {
+        const px = nx * 3.5;
+        const py = ny * 3;
+        leftPupil.style.transform = `translate(${px}px, ${py}px)`;
+        rightPupil.style.transform = `translate(${px}px, ${py}px)`;
+      }
+
+      // Subtle background blob shift
+      if (blob) {
+        blob.style.transform = `translate(${nx * 6}px, ${ny * 6}px)`;
+      }
+
+      // Parallax layers
+      if (cloud1) cloud1.style.transform = `translate(${-nx * 12}px, ${-ny * 4}px)`;
+      if (cloud2) cloud2.style.transform = `translate(${-nx * 8}px, ${-ny * 8}px)`;
+      if (page1) page1.style.transform = `translate(${nx * 15}px, ${ny * 20}px) rotate(${nx * 30}deg)`;
+      if (page2) page2.style.transform = `translate(${nx * 20}px, ${ny * 15}px) rotate(${-nx * 20}deg)`;
+      if (star1) star1.style.transform = `translate(${-nx * 25}px, ${-ny * 25}px)`;
+      if (star2) star2.style.transform = `translate(${-nx * 15}px, ${-ny * 18}px)`;
+      if (star3) star3.style.transform = `translate(${-nx * 20}px, ${-ny * 12}px)`;
+    });
+  }
+
+  // Random Character Blinking
+  const eyes = document.getElementById('student-eyes');
+  function blink() {
+    if (!eyes) return;
+    eyes.style.transform = 'scaleY(0.08)';
+    eyes.style.transformOrigin = '250px 212px';
+    setTimeout(() => {
+      eyes.style.transform = 'scaleY(1)';
+    }, 140);
+  }
+
+  function scheduleBlinks() {
+    const nextBlink = 2500 + Math.random() * 4500;
+    setTimeout(() => {
+      blink();
+      scheduleBlinks();
+    }, nextBlink);
+  }
+  scheduleBlinks();
+
+  // Dynamic Theme Custom Accent Switcher
+  const dots = document.querySelectorAll('.color-dot');
+  const notFoundMain = document.querySelector('.not-found-main') as HTMLElement;
+
+  dots.forEach(dot => {
+    dot.addEventListener('click', () => {
+      dots.forEach(d => d.classList.remove('active'));
+      dot.classList.add('active');
+
+      const accent = dot.getAttribute('data-accent');
+      const accent2 = dot.getAttribute('data-accent-2');
+
+      if (notFoundMain && accent && accent2) {
+        notFoundMain.style.setProperty('--accent', accent);
+        notFoundMain.style.setProperty('--accent-2', accent2);
+      }
+    });
+  });
+
+  // Views Counter Increment & Animation
+  const viewsBtn = document.getElementById('views-counter-btn');
+  const viewsText = document.getElementById('view-count-text');
+  const eyeIcon = document.querySelector('.eye-icon') as HTMLElement;
+
+  if (viewsBtn && viewsText) {
+    const STORAGE_KEY = 'unipulse_404_views';
+    const baseViews = 4764;
+    
+    // Retrieve views or initialize
+    let storedViews = localStorage.getItem(STORAGE_KEY);
+    if (!storedViews) {
+      storedViews = baseViews.toString();
+      localStorage.setItem(STORAGE_KEY, storedViews);
+    }
+    
+    viewsText.textContent = parseInt(storedViews).toLocaleString();
+
+    viewsBtn.addEventListener('click', () => {
+      let current = parseInt(localStorage.getItem(STORAGE_KEY) || baseViews.toString());
+      current += 1;
+      localStorage.setItem(STORAGE_KEY, current.toString());
+      viewsText.textContent = current.toLocaleString();
+
+      // Bounce scale animation
+      viewsBtn.classList.remove('pulse-animate');
+      void viewsBtn.offsetWidth; // Trigger reflow
+      viewsBtn.classList.add('pulse-animate');
+    });
+
+    // Hover blink eye SVG action
+    viewsBtn.addEventListener('mouseenter', () => {
+      if (eyeIcon) {
+        eyeIcon.style.transform = 'scaleY(0.2)';
+        setTimeout(() => {
+          eyeIcon.style.transform = 'scaleY(1)';
+        }, 150);
+      }
+    });
+  }
+</script>
+
 <style>
-  .not-found {
+  .not-found-main {
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: .75rem;
-    text-align: center;
-    padding: 2rem;
+    background: radial-gradient(circle at 80% 20%, rgba(var(--accent-rgb), 0.05), transparent 45%), var(--bg);
+    color: var(--text-1);
+    /* Establish local theme accent overrides */
+    --accent: #6366f1;
+    --accent-2: #8b5cf6;
+    --accent-gradient: linear-gradient(135deg, var(--accent), var(--accent-2));
+    transition: background 0.3s, color 0.3s;
   }
 
-  .code  { font-size: 5rem; font-weight: 700; color: var(--border-3); line-height: 1; }
-  .title { font-size: 1.25rem; font-weight: 600; color: var(--text); }
-  .sub   { font-size: .9375rem; color: var(--text-2); margin-bottom: .5rem; }
+  .not-found-container {
+    max-width: 1100px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 3.5rem 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3.5rem;
+  }
+
+  .hero-section {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    align-items: center;
+    gap: 4rem;
+  }
+
+  .visual-side {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+  }
+
+  .student-svg {
+    width: 100%;
+    max-width: 440px;
+    height: auto;
+    overflow: visible;
+  }
+
+  .parallax-star, .parallax-cloud, .parallax-page {
+    transition: transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .text-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+  }
+
+  .error-code {
+    font-size: 8rem;
+    font-weight: 800;
+    line-height: 0.85;
+    margin-bottom: 0.75rem;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.15));
+    animation: pulseGlow 3s infinite alternate;
+  }
+
+  @keyframes pulseGlow {
+    from { filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.15)); }
+    to { filter: drop-shadow(0 4px 24px rgba(99, 102, 241, 0.35)); }
+  }
+
+  .error-title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 0.75rem;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+  }
+
+  .error-sub {
+    font-size: 1.05rem;
+    color: var(--text-2);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+    max-width: 460px;
+  }
+
+  .btn-large-pill {
+    padding: 0.75rem 2.25rem;
+    font-size: 0.95rem;
+    border-radius: 99px;
+    font-weight: 600;
+    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.2);
+    transition: transform 0.2s, background 0.3s, box-shadow 0.2s;
+  }
+
+  .btn-large-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.3);
+  }
+
+  /* Interactive Pill Widget styling */
+  .interactive-pill {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    padding: 0.5rem 1.15rem;
+    border-radius: 9999px;
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(12px);
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+
+  .interactive-pill:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: var(--border-2);
+  }
+
+  .color-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+  }
+
+  .color-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+    border: 2px solid transparent;
+    transition: transform 0.2s;
+  }
+
+  .color-dot::after {
+    content: '';
+    position: absolute;
+    inset: -3.5px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    opacity: 0;
+    transform: scale(0.65);
+    transition: transform 0.2s, opacity 0.2s, border-color 0.3s;
+  }
+
+  .color-dot:hover {
+    transform: scale(1.2);
+  }
+
+  .color-dot.active::after {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .pill-divider {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+  }
+
+  .views-counter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-2);
+    user-select: none;
+    transition: color 0.2s;
+  }
+
+  .views-counter:hover {
+    color: var(--text-1);
+  }
+
+  .views-counter svg {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .views-counter.pulse-animate {
+    animation: bounceScale 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  @keyframes bounceScale {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+
+  /* Explore Hubs styles */
+  .explore-section {
+    border-top: 1px solid var(--border);
+    padding-top: 3.5rem;
+    width: 100%;
+  }
+
+  .explore-header {
+    margin-bottom: 1.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-2);
+    font-weight: 600;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  .explore-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 1.75rem 1.5rem;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .explore-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3.5px;
+    background: var(--accent-gradient);
+    opacity: 0;
+    transition: opacity 0.22s ease;
+  }
+
+  .explore-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 24px rgba(var(--border-2), 0.05), var(--shadow-sm);
+  }
+
+  .explore-card:hover::before {
+    opacity: 1;
+  }
+
+  .card-icon {
+    font-size: 1.5rem;
+    background: var(--bg-2);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+    transition: background 0.2s, transform 0.2s, color 0.2s;
+  }
+
+  .explore-card:hover .card-icon {
+    background: var(--accent-gradient);
+    color: #fff;
+    transform: scale(1.08);
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title svg {
+    width: 16px;
+    height: 16px;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: opacity 0.2s, transform 0.2s, color 0.3s;
+  }
+
+  .explore-card:hover .card-title svg {
+    opacity: 1;
+    transform: translateX(0);
+    color: var(--accent);
+  }
+
+  .card-desc {
+    font-size: 0.875rem;
+    color: var(--text-2);
+    line-height: 1.55;
+  }
+
+  /* Responsive Design breakpoint rules */
+  @media (max-width: 992px) {
+    .hero-section {
+      gap: 2.5rem;
+    }
+    .error-code {
+      font-size: 6.5rem;
+    }
+    .error-title {
+      font-size: 1.85rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .hero-section {
+      grid-template-columns: 1fr;
+      text-align: center;
+      gap: 1.5rem;
+    }
+    .text-side {
+      align-items: center;
+    }
+    .student-svg {
+      max-width: 320px;
+    }
+    .cards-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+    .explore-section {
+      padding-top: 2.5rem;
+    }
+    .not-found-container {
+      padding: 2rem 1rem;
+      gap: 2.5rem;
+    }
+  }
 </style>

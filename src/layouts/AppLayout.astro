@@ -122,6 +122,9 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
   let initialPostTime: string | null = null;
   const isFeedPage = window.location.pathname === '/feed';
 
+  let lastUnreadNotifications = -1;
+  let lastUnreadMessages = -1;
+
   async function checkUpdates() {
     try {
       const res = await fetch('/api/updates');
@@ -148,8 +151,8 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
       }
 
       // Update Messages indicator
-      const msgBtn = document.querySelector('a[aria-label="Messages"]');
-      if (msgBtn) {
+      const msgBtns = document.querySelectorAll('a[aria-label="Messages"]');
+      msgBtns.forEach(msgBtn => {
         let badge = msgBtn.querySelector('.indicator-badge');
         if (data.unreadMessages > 0) {
           if (!badge) {
@@ -157,15 +160,15 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
             badge.className = 'indicator-badge';
             msgBtn.appendChild(badge);
           }
-          badge.textContent = data.unreadMessages;
+          badge.textContent = data.unreadMessages.toString();
         } else if (badge) {
           badge.remove();
         }
-      }
+      });
 
       // Update Notifications indicator
-      const notifBtn = document.querySelector('button[aria-label="Notifications"]');
-      if (notifBtn) {
+      const notifBtns = document.querySelectorAll('[aria-label="Notifications"]');
+      notifBtns.forEach(notifBtn => {
         let badge = notifBtn.querySelector('.indicator-badge');
         if (data.unreadNotifications > 0) {
           if (!badge) {
@@ -173,11 +176,40 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
             badge.className = 'indicator-badge';
             notifBtn.appendChild(badge);
           }
-          badge.textContent = data.unreadNotifications;
+          badge.textContent = data.unreadNotifications.toString();
         } else if (badge) {
           badge.remove();
         }
+      });
+
+      // Live Toast notifications for new events
+      if (lastUnreadNotifications !== -1 && data.unreadNotifications > lastUnreadNotifications) {
+        const diff = data.unreadNotifications - lastUnreadNotifications;
+        const newNotifs = data.latestNotifications || [];
+        for (let i = 0; i < Math.min(diff, newNotifs.length); i++) {
+          const item = newNotifs[i];
+          if (typeof (window as any).showToast === 'function') {
+            (window as any).showToast(item.message);
+          }
+        }
       }
+      lastUnreadNotifications = data.unreadNotifications;
+
+      // Live Toast notifications for new messages
+      const activeChatUser = window.location.pathname.startsWith('/messages/') ? window.location.pathname.split('/').pop() : null;
+      if (lastUnreadMessages !== -1 && data.unreadMessages > lastUnreadMessages) {
+        const diff = data.unreadMessages - lastUnreadMessages;
+        const newMsgs = data.latestMessages || [];
+        for (let i = 0; i < Math.min(diff, newMsgs.length); i++) {
+          const item = newMsgs[i];
+          if (item.username !== activeChatUser) {
+            if (typeof (window as any).showToast === 'function') {
+              (window as any).showToast(`@${item.username}: ${item.content}`);
+            }
+          }
+        }
+      }
+      lastUnreadMessages = data.unreadMessages;
 
     } catch (e) {
       // ignore
