@@ -1,40 +1,104 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
 import { getUserNotifications } from "../lib/db";
+import { formatFullDate } from "../lib/utils";
 
 const user = Astro.locals.user!;
 const notifications = getUserNotifications(user.id);
+const hasUnread = notifications && notifications.some(n => !n.is_read);
 ---
 
-<AppLayout activeNav="notifications" user={user} title="Notifications · UniPulse">
-  <div class="page-header" style="margin-bottom: 1rem; border-bottom: none;"><h1 class="page-title">Notifications</h1></div>
-  
-  <div class="notifications-list" style="display: flex; flex-direction: column; gap: .5rem;">
-    {
-      !notifications || notifications.length === 0 ? (
-        <div class="empty-state">
-          <p class="empty-icon">🔔</p>
-          <p class="empty-title">All caught up!</p>
-        </div>
+<AppLayout
+  activeNav="notifications"
+  user={user}
+  title="Notifications · UniPulse"
+>
+  <div class="notifications-container" style="max-width: 600px; margin: 0 auto; padding-top: 1rem;">
+    <div
+      class="page-header"
+      style="margin-bottom: 1rem; border-bottom: none; display: flex; justify-content: space-between; align-items: center; background: transparent; padding-left: 0; padding-right: 0;"
+    >
+      <h1 class="page-title" style="font-size: 1.5rem; font-weight: 700;">Notifications</h1>
+      {hasUnread ? (
+        <button id="mark-all-read-btn" class="btn btn-secondary btn-sm" style="flex-shrink: 0;">Mark all as read</button>
       ) : (
-        notifications.map((notif) => (
-          <a href={notif.link} class={`notif-card ${!notif.is_read ? 'unread' : ''}`} style="display: block; padding: 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-md); text-decoration: none; color: inherit;">
-            <div style="font-size: .9375rem; color: var(--text-1); margin-bottom: .25rem;">{notif.message}</div>
-            <div style="font-size: .75rem; color: var(--text-3);">{new Date(notif.created_at).toLocaleString()}</div>
-          </a>
-        ))
-      )
-    }
+        <button class="btn btn-secondary btn-sm" style="flex-shrink: 0;" disabled>Mark all as read</button>
+      )}
+    </div>
+
+    <div class="notifications-list-card">
+      {
+        !notifications || notifications.length === 0 ? (
+          <div class="empty-state">
+            <p class="empty-icon">🔔</p>
+            <p class="empty-title">All caught up!</p>
+          </div>
+        ) : (
+          notifications.map((notif) => (
+            <a
+              href={notif.link}
+              class={`notif-card ${!notif.is_read ? "unread" : ""}`}
+            >
+              <div style="font-size: .9375rem; color: var(--text-1); margin-bottom: .25rem;">
+                {notif.message}
+              </div>
+              <div style="font-size: .75rem; color: var(--text-3);">
+                {formatFullDate(notif.created_at)}
+              </div>
+            </a>
+          ))
+        )
+      }
+    </div>
   </div>
 </AppLayout>
 
 <script>
-  // Mark as read when opening page
-  fetch('/api/notifications/read', { method: 'POST' });
+  const markReadBtn = document.getElementById("mark-all-read-btn");
+  markReadBtn?.addEventListener("click", async () => {
+    const res = await fetch("/api/notifications/read", { method: "POST" });
+    if (res.ok) {
+      // Remove unread visual styles
+      document.querySelectorAll(".notif-card.unread").forEach(card => {
+        card.classList.remove("unread");
+      });
+      // Clear indicators on Sidebar and Header
+      document.querySelectorAll('[aria-label="Notifications"]').forEach(el => {
+        const badge = el.querySelector('.indicator-badge');
+        if (badge) badge.remove();
+      });
+      // Disable the action button
+      markReadBtn.setAttribute("disabled", "true");
+    }
+  });
 </script>
 
 <style>
-  .notif-card { transition: background .15s; }
-  .notif-card:hover { background: var(--bg-2) !important; }
-  .notif-card.unread { border-left: 3px solid var(--accent); background: rgba(99, 102, 241, 0.05) !important; }
+  .notifications-list-card {
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  .notif-card {
+    display: block;
+    padding: 1rem;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s;
+    border-bottom: 1px solid var(--border);
+  }
+  .notif-card:last-child {
+    border-bottom: none;
+  }
+  .notif-card:hover {
+    background: var(--bg-2) !important;
+  }
+  .notif-card.unread {
+    border-left: 3px solid var(--accent);
+    background: rgba(99, 102, 241, 0.03) !important;
+  }
 </style>

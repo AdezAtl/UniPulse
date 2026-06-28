@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { sendMessage, getUserByUsername, createNotification } from '../../../lib/db';
+import { sendMessage, getUserByUsername } from '../../../lib/db';
 
 export const POST: APIRoute = async ({ request, locals }) => {
   if (!locals.user) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
@@ -16,9 +16,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const msg = sendMessage(locals.user.id, receiver.id, content.trim());
-    
-    // Create a notification for the receiver
-    createNotification(receiver.id, `@${locals.user.username} sent you a message.`, `/messages/${locals.user.username}`);
 
     return new Response(JSON.stringify({ success: true, message: msg }), {
       status: 200, headers: { 'Content-Type': 'application/json' }

@@ -1,7 +1,7 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
 import { getUserByUsername, getMessages, markMessagesRead } from "../../lib/db";
-import { formatRelativeTime } from "../../lib/utils";
+import { formatRelativeTime, parseDbDate } from "../../lib/utils";
 
 const user = Astro.locals.user;
 if (!user) return Astro.redirect("/login");
@@ -38,7 +38,7 @@ const messages = getMessages(user.id, otherUser.id);
       ) : (
         messages.map((msg, i) => {
           const isMine = msg.sender_id === user.id;
-          const showTime = i === 0 || (new Date(msg.created_at).getTime() - new Date(messages[i-1].created_at).getTime() > 10 * 60 * 1000);
+          const showTime = i === 0 || (parseDbDate(msg.created_at).getTime() - parseDbDate(messages[i-1].created_at).getTime() > 10 * 60 * 1000);
           return (
             <div class="msg-wrapper">
               {showTime && <div class="msg-time">{formatRelativeTime(msg.created_at)}</div>}

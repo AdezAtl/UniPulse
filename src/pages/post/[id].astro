@@ -8,6 +8,7 @@ import {
   getSavedPostIds,
   getFollowingIds,
 } from "../../lib/db";
+import { formatDate } from "../../lib/utils";
 
 const user = Astro.locals.user!;
 const { id } = Astro.params;
@@ -69,7 +70,7 @@ const followingIds = getFollowingIds(user.id);
                 >
                   <div style="font-size: .8125rem; color: var(--text-2); margin-bottom: .25rem;">
                     <strong>u/{c.username}</strong> ·{" "}
-                    {new Date(c.created_at).toLocaleDateString()}
+                    {formatDate(c.created_at)}
                   </div>
                   <p style="font-size: .9375rem; color: var(--text-1); white-space: pre-wrap;">
                     {c.content}

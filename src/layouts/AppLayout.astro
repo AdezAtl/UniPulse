@@ -200,13 +200,37 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
       if (lastUnreadMessages !== -1 && data.unreadMessages > lastUnreadMessages) {
         const diff = data.unreadMessages - lastUnreadMessages;
         const newMsgs = data.latestMessages || [];
+        let hasActiveChatMsg = false;
+        
         for (let i = 0; i < Math.min(diff, newMsgs.length); i++) {
           const item = newMsgs[i];
-          if (item.username !== activeChatUser) {
+          if (item.username === activeChatUser) {
+            const messagesContainer = document.getElementById('chat-messages');
+            if (messagesContainer) {
+              const wrapper = document.createElement('div');
+              wrapper.className = 'msg-wrapper';
+              wrapper.innerHTML = `<div class="msg-bubble theirs">${item.content}</div>`;
+              
+              const emptyState = messagesContainer.querySelector('.empty-state');
+              if (emptyState) emptyState.remove();
+              
+              messagesContainer.appendChild(wrapper);
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+              hasActiveChatMsg = true;
+            }
+          } else {
             if (typeof (window as any).showToast === 'function') {
               (window as any).showToast(`@${item.username}: ${item.content}`);
             }
           }
+        }
+
+        if (hasActiveChatMsg && activeChatUser) {
+          fetch('/api/messages/read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ senderUsername: activeChatUser })
+          }).catch(() => {});
         }
       }
       lastUnreadMessages = data.unreadMessages;

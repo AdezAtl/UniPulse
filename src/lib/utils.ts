@@ -11,8 +11,27 @@ export function generatePulseId() {
 export const DAILY_POST_LIMIT = 5;
 export const COOLDOWN_MINUTES = 1;
 
+export function parseDbDate(ts: string): Date {
+  if (!ts) return new Date();
+  // If it's already an ISO string or has timezone info, parse it directly
+  if (ts.includes('Z') || ts.includes('+') || ts.includes('UTC') || ts.includes('GMT')) {
+    return new Date(ts);
+  }
+  // Convert YYYY-MM-DD HH:MM:SS to YYYY-MM-DDTHH:MM:SSZ (UTC)
+  if (ts.includes(' ')) {
+    return new Date(ts.replace(' ', 'T') + 'Z');
+  }
+  // If it has T but no offset (e.g. event local datetime-local), treat as local
+  if (ts.includes('T')) {
+    return new Date(ts);
+  }
+  // Fallback: append Z
+  return new Date(ts + 'Z');
+}
+
 export function formatRelativeTime(ts: string): string {
-  const diff = Date.now() - new Date(ts).getTime();
+  const date = parseDbDate(ts);
+  const diff = Date.now() - date.getTime();
   const s = Math.floor(diff / 1000);
   if (s < 60) return 'just now';
   const m = Math.floor(s / 60);
@@ -21,18 +40,18 @@ export function formatRelativeTime(ts: string): string {
   if (h < 24) return `${h}h`;
   const d = Math.floor(h / 24);
   if (d < 7) return `${d}d`;
-  return new Date(ts).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
 }
 
 export function formatFullDate(ts: string): string {
-  return new Date(ts).toLocaleString('en-GB', {
+  return parseDbDate(ts).toLocaleString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
 }
 
 export function formatDate(ts: string): string {
-  return new Date(ts).toLocaleDateString('en-GB', {
+  return parseDbDate(ts).toLocaleDateString('en-GB', {
     day: '2-digit', month: 'short', year: 'numeric',
   });
 }

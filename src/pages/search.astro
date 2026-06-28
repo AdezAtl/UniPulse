@@ -2,7 +2,7 @@
 import AppLayout from "../layouts/AppLayout.astro";
 import PostCard from "../components/PostCard.astro";
 import { searchAll, getLikedPostIds, type SearchResults } from "../lib/db";
-import { formatRelativeTime } from "../lib/utils";
+import { formatRelativeTime, formatFullDate } from "../lib/utils";
 
 const user = Astro.locals.user!;
 const query = Astro.url.searchParams.get("q") || "";
@@ -104,7 +104,7 @@ const hasResults = Object.values(results).some(arr => arr.length > 0);
               {results.events.map(event => (
                 <a href="/events" class="card p-4 result-link-card" style="text-decoration:none; display:block;">
                   <div style="font-weight: 600; color: var(--text-1);">{event.title}</div>
-                  <div style="font-size: .8125rem; color: var(--accent); margin: .25rem 0;">📅 {new Date(event.event_date).toLocaleString()}</div>
+                  <div style="font-size: .8125rem; color: var(--accent); margin: .25rem 0;">📅 {formatFullDate(event.event_date)}</div>
                   <p style="font-size: .875rem; color: var(--text-2); margin-bottom: .5rem;">{event.description}</p>
                   <div style="font-size: .75rem; color: var(--text-3);">Posted by u/{event.author_username}</div>
                 </a>
