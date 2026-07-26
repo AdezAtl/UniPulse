@@ -4,8 +4,8 @@ import PostCard from "../components/PostCard.astro";
 import { getFeedPosts, getLikedPostIds } from "../lib/db";
 
 const user = Astro.locals.user!;
-const posts = getFeedPosts();
-const likedIds = getLikedPostIds(user.id);
+const posts = await getFeedPosts();
+const likedIds = await getLikedPostIds(user.id);
 const likedSet = new Set(likedIds);
 ---
 

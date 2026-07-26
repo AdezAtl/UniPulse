@@ -21,10 +21,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
     if (!department?.trim()) return err('Department is required.');
     if (!level?.trim()) return err('Level is required.');
 
-    const existing = getUserByUsername(username.trim());
+    const existing = await getUserByUsername(username.trim());
     if (existing && existing.id !== userId) return err('That username is already taken.');
 
-    updateUser(userId, {
+    await updateUser(userId, {
       username: username.trim(),
       full_name: full_name?.trim() || null,
       department: department.trim(),
@@ -38,14 +38,14 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { current_password, new_password } = body;
     if (!new_password || new_password.length < 8) return err('New password must be at least 8 characters.');
 
-    const hash = getPasswordHash(userId);
+    const hash = await getPasswordHash(userId);
     if (!hash) return err('User not found.', 404);
 
     const valid = await verifyPassword(current_password, hash);
     if (!valid) return err('Current password is incorrect.');
 
     const newHash = await hashPassword(new_password);
-    updateUserPassword(userId, newHash);
+    await updateUserPassword(userId, newHash);
     return ok({ message: 'Password updated.' });
   }
 

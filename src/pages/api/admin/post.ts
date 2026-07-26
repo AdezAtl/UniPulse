@@ -11,30 +11,30 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!postId) return err('postId is required.');
 
   if (action === 'delete') {
-    updatePost(postId, { is_deleted: 1 });
-    addAdminLog(adminId, 'delete_post', 'post', postId);
+    await updatePost(postId, { is_deleted: 1 });
+    await addAdminLog(adminId, 'delete_post', 'post', postId);
     return ok();
   }
   if (action === 'restore') {
-    updatePost(postId, { is_deleted: 0 });
-    addAdminLog(adminId, 'restore_post', 'post', postId);
+    await updatePost(postId, { is_deleted: 0 });
+    await addAdminLog(adminId, 'restore_post', 'post', postId);
     return ok();
   }
   if (action === 'flag') {
-    updatePost(postId, { is_flagged: 1 });
-    addAdminLog(adminId, 'flag_post', 'post', postId);
+    await updatePost(postId, { is_flagged: 1 });
+    await addAdminLog(adminId, 'flag_post', 'post', postId);
     return ok();
   }
   if (action === 'unflag') {
-    updatePost(postId, { is_flagged: 0 });
-    addAdminLog(adminId, 'unflag_post', 'post', postId);
+    await updatePost(postId, { is_flagged: 0 });
+    await addAdminLog(adminId, 'unflag_post', 'post', postId);
     return ok();
   }
   if (action === 'edit') {
     const trimmed = content?.trim() ?? '';
     if (!trimmed || trimmed.length > 280) return err('Content must be 1–280 characters.');
-    updatePost(postId, { content: trimmed });
-    addAdminLog(adminId, 'edit_post', 'post', postId, { new_content: trimmed });
+    await updatePost(postId, { content: trimmed });
+    await addAdminLog(adminId, 'edit_post', 'post', postId, { new_content: trimmed });
     return ok();
   }
   return err(`Unknown action: ${action}`);

@@ -14,13 +14,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const updateFn = type === 'resource' ? updateResource : updateNews;
 
   if (action === 'delete') {
-    updateFn(itemId, { is_deleted: 1 });
-    addAdminLog(adminId, `delete_${type}`, type, itemId);
+    await updateFn(itemId, { is_deleted: 1 });
+    await addAdminLog(adminId, `delete_${type}`, type, itemId);
     return ok();
   }
   if (action === 'restore') {
-    updateFn(itemId, { is_deleted: 0 });
-    addAdminLog(adminId, `restore_${type}`, type, itemId);
+    await updateFn(itemId, { is_deleted: 0 });
+    await addAdminLog(adminId, `restore_${type}`, type, itemId);
     return ok();
   }
   if (action === 'edit') {
@@ -29,8 +29,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const safe: any = {};
     for (const k of allowed) { if (updates[k] !== undefined) safe[k] = String(updates[k]).trim(); }
     if (!Object.keys(safe).length) return err('No valid fields to update.');
-    updateFn(itemId, safe);
-    addAdminLog(adminId, `edit_${type}`, type, itemId, { updates: safe });
+    await updateFn(itemId, safe);
+    await addAdminLog(adminId, `edit_${type}`, type, itemId, { updates: safe });
     return ok();
   }
   return err(`Unknown action: ${action}`);

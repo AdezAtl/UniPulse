@@ -84,5 +84,8 @@ export function parseMarkdown(text: string | null): string {
   // newlines
   html = html.replace(/\n/g, '<br/>');
 
+  // mentions (e.g. @username)
+  html = html.replace(/@(\w+)/g, '<a href="/profile/$1" class="mention-pill"><img class="mention-pill-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=$1" alt=""/> @$1</a>');
+
   return html;
 }

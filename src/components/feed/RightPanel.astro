@@ -1,95 +1,100 @@
 ---
-import { getEvents, getRegisteredEvents } from "../../lib/db";
-import { formatRelativeTime } from "../../lib/utils";
+import { getEvents, getRegisteredEvents, getAllUsers, getFollowingIds } from "../../lib/db";
 
 const user = Astro.locals.user!;
-const events = getEvents().slice(0, 3);
-const reminders = getRegisteredEvents(user.id);
+const events = (await getEvents()).slice(0, 4);
+const allUsers = await getAllUsers();
+const followingIds = await getFollowingIds(user.id);
+
+// Get suggestions: not self, not followed, not banned, limit 3
+const suggestions = allUsers
+  .filter(u => u.id !== user.id && !followingIds.has(u.id) && !u.is_banned)
+  .slice(0, 3);
 ---
 
 <div class="panel-wrap">
-  <div class="tabs-header">
-    <button class="tab-btn active" data-tab="events">Recent Events</button>
-    <button class="tab-btn" data-tab="reminders">Reminders</button>
-  </div>
-
-  <div class="tab-content active" id="tab-events">
-    <div class="recent-list">
-      {events.length === 0 ? (
-        <div class="empty-text">No recent events.</div>
-      ) : (
-        events.map(event => (
-          <a href={`/search?q=${encodeURIComponent(event.title)}&tab=events`} class="recent-card">
-            <div class="recent-meta">
-              <span class="recent-sub">s/events</span>
-              <span class="recent-time">{formatRelativeTime(event.event_date)}</span>
-            </div>
-            <div class="recent-body">
-              <div class="recent-content">
-                <h4 class="recent-title">{event.title}</h4>
-                <span class="recent-link">{event.location}</span>
+  <!-- Stories Section -->
+  <h3 class="stories-section-title">Stories</h3>
+  <div class="stories-list">
+    {events.length === 0 ? (
+      <div class="empty-text" style="font-size: 0.75rem;">No recent events.</div>
+    ) : (
+      events.map((event, idx) => {
+        const grads = [
+          'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)',
+          'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)',
+          'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)',
+          'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+        ];
+        const grad = grads[idx % grads.length];
+        const avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.author_username || 'event'}`;
+        return (
+          <a href={`/search?q=${encodeURIComponent(event.title)}&tab=events`} class="story-card">
+            <div class="story-card-bg" style={`background: ${grad}`}></div>
+            <div class="story-card-overlay">
+              <div class="story-avatar-ring">
+                <img class="story-avatar" src={avatarUrl} alt="" />
               </div>
-              <div class="recent-thumb" style="background:var(--bg-3); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">📅</div>
+              <h4 class="story-title">{event.title}</h4>
             </div>
           </a>
-        ))
-      )}
+        );
+      })
+    )}
+  </div>
+
+  <!-- Suggestions Section -->
+  {suggestions.length > 0 && (
+    <div class="suggestions-section" style="margin-bottom: 1.5rem;">
+      <h3 class="stories-section-title" style="margin-bottom: 0.75rem;">Suggestions</h3>
+      <div class="suggestions-list">
+        {suggestions.map(u => (
+          <div class="suggest-item">
+            <div class="flex items-center gap-2">
+              <div class="avatar avatar-sm">
+                {u.avatar_url ? (
+                  <img src={u.avatar_url} alt="" />
+                ) : (
+                  <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt="" />
+                )}
+              </div>
+              <div>
+                <div class="cell-name" style="font-size: 0.8125rem; font-weight: 600; color: var(--text-1)">{u.full_name || u.username}</div>
+                <div class="cell-username" style="font-size: 0.7rem; color: var(--text-3)">@{u.username}</div>
+              </div>
+            </div>
+            <button class="suggest-btn follow-btn" data-user-id={u.id}>Follow</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <!-- Recent Section -->
+  <div class="recent-section">
+    <h3 class="recent-section-title">Recent</h3>
+    <div class="recent-list">
+      <a href="/s/compsci" class="recent-item">
+        <span class="sub-icon" style="background:#3b82f6"></span>
+        s/compsci
+      </a>
+      <a href="/s/engineering" class="recent-item">
+        <span class="sub-icon" style="background:#ef4444"></span>
+        s/engineering
+      </a>
+      <a href="/s/campuslife" class="recent-item">
+        <span class="sub-icon" style="background:#10b981"></span>
+        s/campuslife
+      </a>
+      <a href="/s/events" class="recent-item">
+        <span class="sub-icon" style="background:#f59e0b"></span>
+        s/events
+      </a>
     </div>
   </div>
 
-  <div class="tab-content" id="tab-reminders" hidden>
-    <div class="recent-list">
-      {reminders.length === 0 ? (
-        <div class="empty-text">You haven't registered for any events yet.</div>
-      ) : (
-        reminders.map(rem => (
-          <a href={`/events`} class="recent-card">
-            <div class="recent-meta">
-              <span class="recent-sub">s/events</span>
-              <span class="recent-time">{formatRelativeTime(rem.event_date)}</span>
-            </div>
-            <div class="recent-body">
-              <div class="recent-content">
-                <h4 class="recent-title">{rem.title}</h4>
-                <span class="recent-link">{rem.location}</span>
-              </div>
-              <div class="recent-thumb" style="background:var(--bg-3); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">📅</div>
-            </div>
-          </a>
-        ))
-      )}
-    </div>
-  </div>
-
-  <div class="panel-card mt-6">
-    <h3 class="panel-title" style="margin-bottom:.5rem;">Posting Rules</h3>
-    <ul class="rules-list">
-      <li>Max <strong>5 posts</strong> per day</li>
-      <li><strong>15-min</strong> cooldown between posts</li>
-      <li>Resets at <strong>midnight</strong></li>
-      <li>Keep it respectful</li>
-    </ul>
-  </div>
-
-  <p class="panel-footer">UniPulse · Campus Edition</p>
+  <p class="panel-footer" style="font-size: .75rem; color: var(--text-3); text-align: center; margin-top: 2rem;">UniPulse · Campus Edition</p>
 </div>
-
-<script>
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const target = (btn as HTMLElement).dataset.tab;
-      
-      // Update buttons
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      
-      // Update contents
-      document.querySelectorAll('.tab-content').forEach(c => (c as HTMLElement).hidden = true);
-      const tab = document.getElementById(`tab-${target}`);
-      if (tab) tab.hidden = false;
-    });
-  });
-</script>
 
 <style>
   .panel-wrap {
@@ -97,137 +102,54 @@ const reminders = getRegisteredEvents(user.id);
     flex-direction: column;
     padding-left: 1rem;
   }
-  
-  .tabs-header {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-  }
-  
-  .tab-btn {
-    background: none;
-    border: none;
-    padding: 0.5rem 0;
-    font-size: .875rem;
-    font-weight: 600;
-    color: var(--text-2);
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: color 0.15s, border-color 0.15s;
-  }
-  
-  .tab-btn:hover {
-    color: var(--text-1);
-  }
-  
-  .tab-btn.active {
-    color: var(--text-1);
-    border-bottom-color: var(--accent);
-  }
-  
   .empty-text {
     font-size: .875rem;
     color: var(--text-2);
     text-align: center;
     padding: 1rem 0;
   }
-
-  .recent-list { display: flex; flex-direction: column; gap: 1rem; }
-  
-  .recent-card {
+  .recent-section {
+    margin-top: 1.5rem;
+  }
+  .recent-section-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.875rem;
+  }
+  .recent-list {
     display: flex;
     flex-direction: column;
-    gap: .25rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border);
-    text-decoration: none;
+    gap: 0.5rem;
   }
-  .recent-card:last-child { border-bottom: none; }
-  
-  .recent-meta {
+  .recent-item {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: .5rem;
-  }
-  .recent-sub {
-    font-size: .75rem;
-    font-weight: 500;
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md);
     color: var(--text-2);
-  }
-  .recent-time {
-    font-size: .65rem;
-    color: var(--accent);
-  }
-  
-  .recent-body {
-    display: flex;
-    gap: .75rem;
-  }
-  .recent-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: .25rem;
-  }
-  .recent-title {
-    font-size: .875rem;
+    text-decoration: none;
+    font-size: 0.875rem;
     font-weight: 500;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+  }
+  .recent-item:hover {
+    background: var(--bg-2);
     color: var(--text-1);
-    line-height: 1.3;
+    transform: translateX(4px);
   }
-  .recent-link {
-    font-size: .65rem;
-    color: var(--accent);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .recent-thumb {
-    width: 60px;
-    height: 45px;
-    border-radius: var(--radius-sm);
+  .sub-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
     flex-shrink: 0;
+    transition: transform 0.15s ease;
   }
-
-  .panel-card {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 1rem;
-  }
-  .panel-title {
-    font-size: .875rem;
-    font-weight: 600;
-    color: var(--text-1);
-  }
-  .rules-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: .375rem;
-  }
-  .rules-list li {
-    font-size: .75rem;
-    color: var(--text-2);
-    padding-left: .875rem;
-    position: relative;
-  }
-  .rules-list li::before {
-    content: "·";
-    position: absolute;
-    left: 0;
-    color: var(--text-3);
-  }
-  .rules-list strong {
-    color: var(--text-1);
-    font-weight: 500;
-  }
-  .panel-footer {
-    font-size: .75rem;
-    color: var(--text-3);
-    text-align: center;
-    margin-top: 1.5rem;
+  .recent-item:hover .sub-icon {
+    transform: scale(1.1);
   }
 </style>

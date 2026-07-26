@@ -1,4 +1,5 @@
-import { getUserByUsername, setUserRole } from './src/lib/db.js';
+import Database from 'better-sqlite3';
+import { join } from 'path';
 
 const username = process.argv[2];
 
@@ -8,12 +9,14 @@ if (!username) {
   process.exit(1);
 }
 
-const user = getUserByUsername(username);
+const db = new Database(join(process.cwd(), 'data/unipulse.db'));
+
+const user = db.prepare('SELECT * FROM users WHERE username = ?').get(username) as any;
 
 if (!user) {
   console.error(`\n❌ User @${username} not found in the database.\n`);
   process.exit(1);
 }
 
-setUserRole(user.id, 'admin');
+db.prepare("UPDATE users SET role = 'admin' WHERE id = ?").run(user.id);
 console.log(`\n✅ Success! @${username} is now an Admin. Please refresh the app to see your admin dashboard.\n`);

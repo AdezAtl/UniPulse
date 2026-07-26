@@ -16,12 +16,12 @@ import { formatFullDate, formatRelativeTime } from "../../lib/utils";
 
 const user = Astro.locals.user!;
 const tab = Astro.url.searchParams.get("tab") ?? "overview";
-const stats = getAdminStats();
-const users = getAllUsers();
-const posts = getAllPostsAdmin();
-const logs = getAdminLogs();
-const resources = getAllResourcesAdmin();
-const news = getAllNewsAdmin();
+const stats = await getAdminStats();
+const users = await getAllUsers();
+const posts = await getAllPostsAdmin();
+const logs = await getAdminLogs();
+const resources = await getAllResourcesAdmin();
+const news = await getAllNewsAdmin();
 
 const flaggedPosts = posts.filter((p) => p.is_flagged && !p.is_deleted);
 const recentUsers = users.slice(0, 5);

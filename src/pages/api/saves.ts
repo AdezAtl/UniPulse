@@ -9,7 +9,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const { postId } = body;
   if (!postId) return err('Invalid request.');
 
-  const saved = toggleSavedPost(locals.user.id, postId);
+  const saved = await toggleSavedPost(locals.user.id, postId);
 
   return new Response(JSON.stringify({ success: true, saved }), {
     status: 200, headers: { 'Content-Type': 'application/json' },

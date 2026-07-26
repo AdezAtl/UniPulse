@@ -9,11 +9,11 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const { postId, content } = body;
   if (!postId || !content || content.trim().length === 0) return err('Invalid request.');
 
-  createComment(postId, locals.user.id, content.trim());
+  await createComment(postId, locals.user.id, content.trim());
   
-  const post = getPostById(postId);
+  const post = await getPostById(postId);
   if (post && post.author_id !== locals.user.id) {
-    createNotification(post.author_id, `u/${locals.user.username} commented on your post`, `/post/${postId}`);
+    await createNotification(post.author_id, `u/${locals.user.username} commented on your post`, `/post/${postId}`);
   }
 
   return new Response(JSON.stringify({ success: true }), {

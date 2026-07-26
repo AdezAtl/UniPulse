@@ -9,11 +9,11 @@ if (!user) return Astro.redirect("/login");
 const { username } = Astro.params;
 if (!username || username === user.username) return Astro.redirect("/messages");
 
-const otherUser = getUserByUsername(username);
+const otherUser = await getUserByUsername(username);
 if (!otherUser) return Astro.redirect("/messages");
 
-markMessagesRead(otherUser.id, user.id);
-const messages = getMessages(user.id, otherUser.id);
+await markMessagesRead(otherUser.id, user.id);
+const messages = await getMessages(user.id, otherUser.id);
 ---
 
 <AppLayout title={`Chat with ${otherUser.username} · UniPulse`} activeNav="messages" user={user}>

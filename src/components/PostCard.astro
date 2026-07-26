@@ -209,19 +209,28 @@ const {
 
   <footer class="post-footer">
     <div class="vote-group" data-post-id={post.id}>
-      <button
-        class={`vote-btn upvote ${userVote === 1 ? "active" : ""}`}
-        aria-label="Upvote"
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg
+      <div class="like-btn-container" style="display: flex; align-items: center; position: relative;">
+        <button
+          class={`vote-btn upvote ${userVote === 1 ? "active" : ""}`}
+          aria-label="Upvote"
         >
-      </button>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"><polyline points="18 15 12 9 6 15"></polyline></svg
+          >
+        </button>
+        <div class="reactions-panel">
+          <button type="button" class="reaction-emoji-btn" data-emoji="🔥">🔥</button>
+          <button type="button" class="reaction-emoji-btn" data-emoji="🙌">🙌</button>
+          <button type="button" class="reaction-emoji-btn" data-emoji="😮">😮</button>
+          <button type="button" class="reaction-emoji-btn" data-emoji="😢">😢</button>
+          <button type="button" class="reaction-emoji-btn" data-emoji="❤️">❤️</button>
+        </div>
+      </div>
       <span class="vote-count"
         >{
           post.like_count > 0
@@ -339,6 +348,23 @@ const {
 </div>
 
 <script>
+  // Reaction Emoji click logic
+  document.querySelectorAll(".reaction-emoji-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const emojiBtn = btn as HTMLButtonElement;
+      const emoji = emojiBtn.dataset.emoji;
+      if (typeof (window as any).showToast === 'function') {
+        (window as any).showToast(`Reacted with ${emoji}!`);
+      }
+      const group = emojiBtn.closest(".vote-group") as HTMLElement;
+      const upBtn = group?.querySelector(".upvote") as HTMLButtonElement;
+      if (upBtn && !upBtn.classList.contains("active")) {
+        upBtn.click();
+      }
+    });
+  });
+
   // Vote toggle logic
   document.querySelectorAll(".vote-btn").forEach((btn) => {
     btn.addEventListener("click", async () => {
@@ -436,27 +462,8 @@ const {
     });
   });
 
-  // Follow logic
-  document.querySelectorAll(".follow-btn").forEach((btn) => {
-    btn.addEventListener("click", async () => {
-      const followingId = (btn as HTMLElement).dataset.userId;
-      const res = await fetch("/api/follows", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ followingId }),
-      });
-      if (res.ok) {
-        const { following } = await res.json();
-        btn.textContent = following ? "Following" : "Follow +";
-        if ((window as any).showToast)
-          (window as any).showToast(
-            following
-              ? "You are now following this user"
-              : "You unfollowed this user",
-          );
-      }
-    });
-  });
+  // Follow logic is handled globally in AppLayout.astro via event delegation
+
 
   // Admin dropdown
   document.querySelectorAll(".admin-trigger").forEach((btn) => {

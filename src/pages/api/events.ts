@@ -11,7 +11,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return err('All fields (title, description, date, location) are required.');
   }
 
-  createEvent(
+  await createEvent(
     title.trim(), 
     description.trim(), 
     event_date.trim(), 

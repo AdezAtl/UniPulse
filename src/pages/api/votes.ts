@@ -10,13 +10,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!postId || typeof value !== 'number') return err('Invalid request.');
 
   if (value === 0) {
-    removeVote(locals.user.id, postId);
+    await removeVote(locals.user.id, postId);
   } else {
-    addVote(locals.user.id, postId, value);
+    await addVote(locals.user.id, postId, value);
     if (value === 1) {
-      const post = getPostById(postId);
+      const post = await getPostById(postId);
       if (post && post.author_id !== locals.user.id) {
-        createNotification(post.author_id, `u/${locals.user.username} liked your post`, `/post/${postId}`);
+        await createNotification(post.author_id, `u/${locals.user.username} liked your post`, `/post/${postId}`);
       }
     }
   }

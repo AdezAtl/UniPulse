@@ -6,8 +6,8 @@ import { formatRelativeTime } from "../../lib/utils";
 const user = Astro.locals.user;
 if (!user) return Astro.redirect("/login");
 
-const conversations = getConversations(user.id);
-const allUsers = getAllUsers().filter(u => u.id !== user.id && !u.is_banned);
+const conversations = await getConversations(user.id);
+const allUsers = (await getAllUsers()).filter(u => u.id !== user.id && !u.is_banned);
 ---
 
 <AppLayout title="Messages · UniPulse" activeNav="messages" user={user}>

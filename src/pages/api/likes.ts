@@ -9,8 +9,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const { postId, action } = body;
   if (!postId || !['like', 'unlike'].includes(action)) return err('Invalid request.');
 
-  if (action === 'like') addLike(locals.user.id, postId);
-  else removeLike(locals.user.id, postId);
+  if (action === 'like') await addLike(locals.user.id, postId);
+  else await removeLike(locals.user.id, postId);
 
   return new Response(JSON.stringify({ success: true }), {
     status: 200, headers: { 'Content-Type': 'application/json' },

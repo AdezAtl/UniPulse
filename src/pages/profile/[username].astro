@@ -8,20 +8,20 @@ const { username } = Astro.params;
 const viewer = Astro.locals.user!;
 const isAdmin = Astro.locals.isAdmin;
 
-const allUsers = getAllUsers();
+const allUsers = await getAllUsers();
 const profileUser = allUsers.find((u) => u.username === username);
 if (!profileUser) return Astro.redirect("/feed");
 
-const posts = getUserPosts(profileUser.id);
+const posts = await getUserPosts(profileUser.id);
 const isOwnPage = viewer.id === profileUser.id;
 
-const savedPosts = isOwnPage ? getSavedPosts(viewer.id) : [];
-const userVotes = getUserVotes(viewer.id);
-const savedIds = getSavedPostIds(viewer.id);
-const followingIds = getFollowingIds(viewer.id);
+const savedPosts = isOwnPage ? await getSavedPosts(viewer.id) : [];
+const userVotes = await getUserVotes(viewer.id);
+const savedIds = await getSavedPostIds(viewer.id);
+const followingIds = await getFollowingIds(viewer.id);
 
-const profileFollowersIds = getFollowerIds(profileUser.id);
-const profileFollowingIds = Array.from(getFollowingIds(profileUser.id));
+const profileFollowersIds = await getFollowerIds(profileUser.id);
+const profileFollowingIds = Array.from(await getFollowingIds(profileUser.id));
 
 const followersUsers = allUsers.filter(u => profileFollowersIds.includes(u.id));
 const followingUsers = allUsers.filter(u => profileFollowingIds.includes(u.id));

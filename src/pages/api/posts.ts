@@ -15,10 +15,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const isAdmin = locals.user.role === 'admin';
 
   if (!isAdmin) {
-    const count = getTodayPostCount(userId);
+    const count = await getTodayPostCount(userId);
     if (count >= DAILY_POST_LIMIT) return err("You've reached your daily post limit. Come back tomorrow!", 429);
 
-    const lastPost = getLastPostTime(userId);
+    const lastPost = await getLastPostTime(userId);
     const cooldown = getCooldownRemaining(lastPost);
     if (cooldown > 0) {
       const mins = Math.ceil(cooldown / 60);
@@ -27,7 +27,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   }
 
   const mediaUrl = body.mediaUrl || null;
-  createPost(userId, content, mediaUrl);
+  await createPost(userId, content, mediaUrl);
   return new Response(JSON.stringify({ success: true }), {
     status: 201, headers: { 'Content-Type': 'application/json' },
   });

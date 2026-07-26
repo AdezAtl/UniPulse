@@ -9,9 +9,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
   const { followingId } = body;
   if (!followingId) return err('Invalid request.');
 
-  const following = toggleFollow(locals.user.id, followingId);
+  const following = await toggleFollow(locals.user.id, followingId);
   if (following) {
-    createNotification(followingId, `u/${locals.user.username} started following you`, `/profile/${locals.user.username}`);
+    await createNotification(followingId, `u/${locals.user.username} started following you`, `/profile/${locals.user.username}`);
   }
 
   return new Response(JSON.stringify({ success: true, following }), {

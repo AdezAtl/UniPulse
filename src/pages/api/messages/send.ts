@@ -10,12 +10,12 @@ export const POST: APIRoute = async ({ request, locals }) => {
       return new Response(JSON.stringify({ error: 'Missing fields' }), { status: 400 });
     }
 
-    const receiver = getUserByUsername(receiverUsername);
+    const receiver = await getUserByUsername(receiverUsername);
     if (!receiver) {
       return new Response(JSON.stringify({ error: 'User not found' }), { status: 404 });
     }
 
-    const msg = sendMessage(locals.user.id, receiver.id, content.trim());
+    const msg = await sendMessage(locals.user.id, receiver.id, content.trim());
 
     return new Response(JSON.stringify({ success: true, message: msg }), {
       status: 200, headers: { 'Content-Type': 'application/json' }

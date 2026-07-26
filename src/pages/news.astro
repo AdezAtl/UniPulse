@@ -11,12 +11,12 @@ if (Astro.request.method === "POST" && isAdmin) {
   const title = (form.get("title") as string)?.trim();
   const content = (form.get("content") as string)?.trim();
   if (title && content) {
-    createNews(title, content, user.id);
+    await createNews(title, content, user.id);
     return Astro.redirect("/news");
   }
 }
 
-const newsItems = getNews();
+const newsItems = await getNews();
 ---
 
 <AppLayout activeNav="news" user={user} title="Campus News · UniPulse">

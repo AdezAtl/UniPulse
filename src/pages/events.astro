@@ -4,8 +4,8 @@ import { getEvents, getRegisteredEventIds } from "../lib/db";
 import { formatFullDate, parseMarkdown } from "../lib/utils";
 
 const user = Astro.locals.user!;
-const events = getEvents();
-const registeredIds = getRegisteredEventIds(user.id);
+const events = await getEvents();
+const registeredIds = await getRegisteredEventIds(user.id);
 ---
 
 <AppLayout activeNav="events" user={user} title="Events · UniPulse">

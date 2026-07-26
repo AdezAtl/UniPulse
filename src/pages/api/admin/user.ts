@@ -13,24 +13,24 @@ export const POST: APIRoute = async ({ request, locals }) => {
     return err('You cannot perform this action on your own account.');
 
   if (action === 'promote') {
-    setUserRole(targetUserId, 'admin');
-    addAdminLog(adminId, 'promote_user', 'user', targetUserId);
+    await setUserRole(targetUserId, 'admin');
+    await addAdminLog(adminId, 'promote_user', 'user', targetUserId);
     return ok();
   }
   if (action === 'demote') {
-    setUserRole(targetUserId, 'user');
-    addAdminLog(adminId, 'demote_user', 'user', targetUserId);
+    await setUserRole(targetUserId, 'user');
+    await addAdminLog(adminId, 'demote_user', 'user', targetUserId);
     return ok();
   }
   if (action === 'ban') {
-    setUserBanned(targetUserId, true);
-    deleteAllUserSessions(targetUserId); // force logout immediately
-    addAdminLog(adminId, 'ban_user', 'user', targetUserId, { reason: reason ?? '' });
+    await setUserBanned(targetUserId, true);
+    await deleteAllUserSessions(targetUserId); // force logout immediately
+    await addAdminLog(adminId, 'ban_user', 'user', targetUserId, { reason: reason ?? '' });
     return ok();
   }
   if (action === 'unban') {
-    setUserBanned(targetUserId, false);
-    addAdminLog(adminId, 'unban_user', 'user', targetUserId);
+    await setUserBanned(targetUserId, false);
+    await addAdminLog(adminId, 'unban_user', 'user', targetUserId);
     return ok();
   }
   return err(`Unknown action: ${action}`);

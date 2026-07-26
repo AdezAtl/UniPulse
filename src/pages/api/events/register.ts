@@ -7,7 +7,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     const { eventId } = await request.json();
     if (!eventId) return new Response(JSON.stringify({ error: 'Missing event ID' }), { status: 400 });
     
-    const registered = toggleEventRegistration(locals.user.id, eventId);
+    const registered = await toggleEventRegistration(locals.user.id, eventId);
     return new Response(JSON.stringify({ registered }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   } catch (error) {
     return new Response(JSON.stringify({ error: 'Failed' }), { status: 500 });

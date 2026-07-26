@@ -15,11 +15,11 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     // Auto-detect identifier type
     let userRow: any = null;
     if (id.toUpperCase().startsWith('UP-')) {
-        userRow = getUserByPulseId(id.toUpperCase());
+        userRow = await getUserByPulseId(id.toUpperCase());
     } else if (id.includes('@')) {
-        userRow = getUserByEmail(id.toLowerCase());
+        userRow = await getUserByEmail(id.toLowerCase());
     } else {
-        userRow = getUserByUsername(id);
+        userRow = await getUserByUsername(id);
     }
 
     if (!userRow) return err('User not found. Check your username, email, or Pulse ID.');
@@ -28,7 +28,7 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     const valid = await verifyPassword(password, userRow.password_hash);
     if (!valid) return err('Incorrect password.');
 
-    const token = createSession(userRow.id);
+    const token = await createSession(userRow.id);
     cookies.set(COOKIE_NAME, token, {
         httpOnly: true, sameSite: 'lax', path: '/', maxAge: COOKIE_MAX_AGE,
     });

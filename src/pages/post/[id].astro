@@ -15,13 +15,13 @@ const { id } = Astro.params;
 
 if (!id) return Astro.redirect("/feed");
 
-const post = getPostById(id);
+const post = await getPostById(id);
 if (!post) return Astro.redirect("/feed");
 
-const comments = getPostComments(id);
-const userVotes = getUserVotes(user.id);
-const savedIds = getSavedPostIds(user.id);
-const followingIds = getFollowingIds(user.id);
+const comments = await getPostComments(id);
+const userVotes = await getUserVotes(user.id);
+const savedIds = await getSavedPostIds(user.id);
+const followingIds = await getFollowingIds(user.id);
 ---
 
 <AppLayout title={`Post by @${post.username} · UniPulse`} user={user}>

@@ -6,8 +6,8 @@ import { getFeedPosts, getLikedPostIds } from "../../lib/db";
 const user = Astro.locals.user!;
 const { department } = Astro.params;
 
-const posts = getFeedPosts().filter(p => p.department.toLowerCase().replace(/[^a-z0-9]/g, '') === department);
-const likedIds = getLikedPostIds(user.id);
+const posts = (await getFeedPosts()).filter(p => p.department.toLowerCase().replace(/[^a-z0-9]/g, '') === department);
+const likedIds = await getLikedPostIds(user.id);
 const likedSet = new Set(likedIds);
 ---
 

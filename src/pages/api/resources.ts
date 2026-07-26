@@ -10,7 +10,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
   if (!title?.trim()) return err('Title is required.');
   if (!link_url && !file_url) return err('Provide at least a link URL or file URL.');
 
-  createResource({
+  await createResource({
     title: title.trim(),
     description: description?.trim() || null,
     link_url: link_url?.trim() || null,

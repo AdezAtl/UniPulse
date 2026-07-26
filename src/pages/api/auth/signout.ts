@@ -4,7 +4,7 @@ import { COOKIE_NAME } from '../../../lib/auth';
 
 export const POST: APIRoute = async ({ cookies, redirect }) => {
   const token = cookies.get(COOKIE_NAME)?.value;
-  if (token) deleteSession(token);
+  if (token) await deleteSession(token);
   cookies.delete(COOKIE_NAME, { path: '/' });
   return redirect('/login');
 };

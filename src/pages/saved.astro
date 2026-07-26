@@ -4,11 +4,11 @@ import PostCard from "../components/PostCard.astro";
 import { getSavedPosts, getUserVotes, getSavedPostIds, getFollowingIds } from "../lib/db";
 
 const user = Astro.locals.user!;
-const posts = getSavedPosts(user.id);
+const posts = await getSavedPosts(user.id);
 
-const userVotes = getUserVotes(user.id);
-const savedIds = getSavedPostIds(user.id);
-const followingIds = getFollowingIds(user.id);
+const userVotes = await getUserVotes(user.id);
+const savedIds = await getSavedPostIds(user.id);
+const followingIds = await getFollowingIds(user.id);
 ---
 
 <AppLayout activeNav="saved" user={user} title="Saved Posts · UniPulse">

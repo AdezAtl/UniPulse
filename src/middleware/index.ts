@@ -16,7 +16,7 @@ export const onRequest = defineMiddleware(async ({ request, cookies, redirect, l
   locals.sessionToken = token;
 
   if (token) {
-    const user = getSessionUser(token); // also slides the 3-day inactivity window
+    const user = await getSessionUser(token); // also slides the 3-day inactivity window
 
     if (user) {
       locals.user = user;

@@ -18,18 +18,18 @@ export const POST: APIRoute = async ({ request, cookies }) => {
     if (!department?.trim()) return err('Department is required.');
     if (!level?.trim()) return err('Level is required.');
 
-    if (getUserByEmail(email.trim())) return err('Email is already registered.');
-    if (getUserByUsername(username.trim())) return err('Username is already taken.');
+    if (await getUserByEmail(email.trim())) return err('Email is already registered.');
+    if (await getUserByUsername(username.trim())) return err('Username is already taken.');
 
     const password_hash = await hashPassword(password);
-    const user = createUser({
+    const user = await createUser({
         id: newId(), email: email.trim().toLowerCase(),
         username: username.trim(), pulse_id: generatePulseId(),
         password_hash, full_name: full_name?.trim() || null,
         department: department.trim(), level: level.trim(),
     });
 
-    const token = createSession(user.id);
+    const token = await createSession(user.id);
     cookies.set(COOKIE_NAME, token, {
         httpOnly: true, sameSite: 'lax', path: '/', maxAge: COOKIE_MAX_AGE,
     });

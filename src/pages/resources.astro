@@ -3,7 +3,7 @@ import AppLayout from "../layouts/AppLayout.astro";
 import { getResources } from "../lib/db";
 import { formatDate } from "../lib/utils";
 const user = Astro.locals.user!;
-const resources = getResources();
+const resources = await getResources();
 ---
 
 <AppLayout activeNav="resources" user={user} title="Resources · UniPulse">

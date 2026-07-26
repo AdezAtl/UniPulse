@@ -12,8 +12,8 @@ let results: SearchResults = { users: [], posts: [], resources: [], news: [], ev
 let likedSet = new Set<string>();
 
 if (query.trim()) {
-  results = searchAll(query.trim(), user.id);
-  const likedIds = getLikedPostIds(user.id);
+  results = await searchAll(query.trim(), user.id);
+  const likedIds = await getLikedPostIds(user.id);
   likedSet = new Set(likedIds);
 }
 

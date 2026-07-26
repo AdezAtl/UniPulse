@@ -4,7 +4,7 @@ import { getUserNotifications } from "../lib/db";
 import { formatFullDate } from "../lib/utils";
 
 const user = Astro.locals.user!;
-const notifications = getUserNotifications(user.id);
+const notifications = await getUserNotifications(user.id);
 const hasUnread = notifications && notifications.some(n => !n.is_read);
 ---
 

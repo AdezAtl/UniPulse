@@ -11,10 +11,10 @@ import {
 import { getCooldownRemaining } from "../lib/utils";
 
 const user = Astro.locals.user!;
-const posts = getFeedPosts();
-const likedIds = getLikedPostIds(user.id);
-const todayCount = Astro.locals.isAdmin ? 0 : getTodayPostCount(user.id);
-const lastPost = getLastPostTime(user.id);
+const posts = await getFeedPosts();
+const likedIds = await getLikedPostIds(user.id);
+const todayCount = Astro.locals.isAdmin ? 0 : await getTodayPostCount(user.id);
+const lastPost = await getLastPostTime(user.id);
 const cooldownSecs = Astro.locals.isAdmin ? 0 : getCooldownRemaining(lastPost);
 const likedSet = new Set(likedIds);
 ---
