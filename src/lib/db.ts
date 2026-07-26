@@ -248,11 +248,10 @@ const POST_WITH_META_SQL = `
     p.user_id AS author_id,
     u.username, u.pulse_id, u.full_name, u.department, u.level,
     u.avatar_url, u.role AS author_role, u.is_banned,
-    IFNULL(SUM(l.value), 0) AS like_count,
+    (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS like_count,
     (SELECT COUNT(*) FROM comments WHERE post_id = p.id AND is_deleted = 0) AS comment_count
   FROM posts p
   JOIN users u ON u.id = p.user_id
-  LEFT JOIN likes l ON l.post_id = p.id
 `;
 
 export async function getFeedPosts(limit?: number): Promise<PostWithMeta[]> {
@@ -364,10 +363,10 @@ export async function getUserVotes(userId: string): Promise<Record<string, numbe
 
 export async function getLikedPostIds(userId: string): Promise<string[]> {
   const rs = await turso.execute({
-    sql: 'SELECT post_id FROM likes WHERE user_id = ? AND value = 1',
+    sql: 'SELECT post_id FROM likes WHERE user_id = ?',
     args: [userId]
   });
-  return rs.rows.map((r: any) => r.post_id);
+  return rs.rows.map((r: any) => r.post_id as string);
 }
 
 export async function addVote(userId: string, postId: string, value: number): Promise<void> {
@@ -723,7 +722,7 @@ export async function getConversations(userId: string): Promise<Conversation[]> 
       `,
       args: [userId, otherUser.id, otherUser.id, userId]
     });
-    
+
     const unreadRs = await turso.execute({
       sql: `
         SELECT COUNT(*) as c FROM direct_messages 

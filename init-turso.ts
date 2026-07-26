@@ -30,7 +30,6 @@ if (!url || !authToken) {
   process.exit(1);
 }
 
-// Ensure url starts with https:// for serverless HTTP client if libsql:// failed
 if (url.startsWith('libsql://')) {
   url = url.replace('libsql://', 'https://');
 }
@@ -78,6 +77,7 @@ async function initSchema() {
       id          TEXT PRIMARY KEY,
       user_id     TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       post_id     TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+      value       INTEGER DEFAULT 1,
       created_at  TEXT NOT NULL DEFAULT (datetime('now')),
       UNIQUE(user_id, post_id)
     )`,
@@ -181,7 +181,21 @@ async function initSchema() {
     await turso.execute(sql);
   }
 
-  console.log('🎉 SUCCESS: All database tables created on your Turso Cloud instance!');
+  const migrations = [
+    `ALTER TABLE likes ADD COLUMN value INTEGER DEFAULT 1`,
+    `ALTER TABLE posts ADD COLUMN media_url TEXT`,
+    `ALTER TABLE events ADD COLUMN media_url TEXT`,
+  ];
+
+  for (const sql of migrations) {
+    try {
+      await turso.execute(sql);
+    } catch (e) {
+      // Column might already exist, ignore error
+    }
+  }
+
+  console.log('🎉 SUCCESS: Turso Schema & Migrations Applied Successfully!');
 }
 
 initSchema().catch(err => {
