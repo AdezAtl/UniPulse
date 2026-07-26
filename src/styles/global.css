@@ -8,9 +8,16 @@
   --bg-3:     #eeecea;
 
   /* Text */
+  --text:     #18181a;
   --text-1:   #18181a;
   --text-2:   #6b6a66;
   --text-3:   #a8a7a2;
+
+  /* Toast Notification (Light Theme: Black container with White text) */
+  --toast-bg:     #0f0f12;
+  --toast-color:  #ffffff;
+  --toast-border: rgba(255, 255, 255, 0.2);
+  --toast-shadow: 0 10px 30px -4px rgba(0,0,0,0.35), 0 4px 12px rgba(0,0,0,0.2);
 
   /* Borders */
   --border:   rgba(0,0,0,0.09);
@@ -51,9 +58,16 @@
     --bg:       #111110;
     --bg-2:     #1a1a18;
     --bg-3:     #222220;
+    --text:     #e8e7e2;
     --text-1:   #e8e7e2;
     --text-2:   #88877f;
     --text-3:   #555550;
+    /* Toast Notification (Dark Theme: White container with Black text) */
+    --toast-bg:     #ffffff;
+    --toast-color:  #0f0f12;
+    --toast-border: rgba(0, 0, 0, 0.12);
+    --toast-shadow: 0 12px 36px -4px rgba(0,0,0,0.5), 0 4px 14px rgba(0,0,0,0.3);
+
     --border:   rgba(255,255,255,0.08);
     --border-2: rgba(255,255,255,0.15);
     --green-bg: #052e16;

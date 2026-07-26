@@ -1,188 +1,203 @@
-# UniPulse
+# UniPulse ⚡
 
-A privacy-focused campus social platform for university students.
-Built with **Astro**, **vanilla CSS**, and **Supabase**.
+A privacy-focused, high-performance campus social platform for university students.  
+Built with **Astro (SSR)**, **Express / Node.js (RPC Micro-backend)**, **SQLite (`better-sqlite3`)**, and **Vanilla CSS**.
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### 1. Install dependencies
+Install dependencies for both the frontend and the backend:
 ```bash
+# Install frontend dependencies
 npm install
+
+# Install backend dependencies
+cd backend && npm install && cd ..
 ```
 
-### 2. Configure environment
+### 2. Configure environment variables
+Create `.env` in the root directory:
+```env
+BACKEND_URL=http://localhost:3000
+INTERNAL_API_KEY=unipulse_secret_development_api_key_12345
+```
+
+Create `backend/.env`:
+```env
+PORT=3000
+INTERNAL_API_KEY=unipulse_secret_development_api_key_12345
+```
+
+### 3. Start the Backend RPC Server
 ```bash
-cp .env.example .env
-```
-Fill in your Supabase project URL and anon key.
-
-### 3. Run the database migration
-Open your Supabase project → SQL Editor → paste and run `supabase/migrations/001_schema.sql`.
-
-### 4. Set your first admin
-After signing up via `/signup`, run in Supabase SQL Editor:
-```sql
-UPDATE users SET role = 'admin' WHERE email = 'your@email.com';
+cd backend
+npm run dev
+# → Backend running on http://localhost:3000
 ```
 
-### 5. Start dev server
+### 4. Start the Frontend Dev Server
+In a separate terminal tab/window:
 ```bash
 npm run dev
-# → http://localhost:4321
+# → Frontend running on http://localhost:4321
+```
+
+### 5. Set Up Admin Permissions
+After signing up via `/signup`, grant your account admin access using the included CLI helper:
+```bash
+npx tsx make-admin.ts <your_username>
 ```
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 unipulse/
 ├── package.json
-├── astro.config.mjs         SSR mode, node adapter, react integration
-├── tsconfig.json            Strict TypeScript + path aliases
-├── .env.example             Copy to .env and fill in Supabase keys
+├── astro.config.mjs         # SSR mode, Node adapter, Vercel support
+├── tsconfig.json            # Strict TypeScript + path aliases
+├── make-admin.ts            # CLI tool to grant admin rights to users
+├── pitch_deck_design_brief.md # Strategic design & product architecture overview
+├── .env.example             # Frontend environment template
+├── data/
+│   └── unipulse.db          # SQLite database (auto-created on initialization)
+│
+├── backend/                 # Standalone Express / RPC Backend
+│   ├── package.json
+│   ├── tsconfig.json
+│   ├── .env
+│   └── src/
+│       ├── index.ts         # Express server & RPC router with API key guard
+│       ├── db.ts            # SQLite database schema, queries, & migrations
+│       └── auth.ts          # Password hashing & authentication helpers
 │
 ├── public/
-│   └── favicon.svg
-│
-├── supabase/
-│   └── migrations/
-│       └── 001_schema.sql  Tables, views, RLS policies, stored functions
+│   ├── favicon.svg
+│   └── uploads/             # User uploaded media & images
 │
 └── src/
-    ├── env.d.ts             Astro.locals type declarations
+    ├── env.d.ts             # Astro type declarations
     ├── styles/
-    │   └── global.css       Full CSS design system (no Tailwind)
+    │   └── global.css       # Full CSS design system (zero-dependency)
     │
     ├── lib/
-    │   ├── database.types.ts  TypeScript types for all DB tables/views
-    │   ├── supabase.ts        Supabase client + all query helpers
-    │   └── utils.ts           Rate limit constants, date formatters
+    │   ├── db.ts            # RPC Client adapter calling Express backend
+    │   └── utils.ts         # Rate limiting, date formatting, and utilities
     │
     ├── middleware/
-    │   └── index.ts           Auth guard + admin route protection
+    │   └── index.ts         # Auth guards & admin route protection
     │
     ├── layouts/
-    │   ├── BaseLayout.astro   HTML shell (fonts, meta, global CSS)
-    │   ├── AppLayout.astro    3-column feed layout + mobile bottom nav
-    │   ├── AuthLayout.astro   Centered card (login / signup)
-    │   └── AdminLayout.astro  Sidebar admin shell
+    │   ├── BaseLayout.astro # Base HTML shell & meta tags
+    │   ├── AppLayout.astro  # 3-column responsive layout with mobile bottom nav
+    │   ├── AuthLayout.astro # Centered authentication card layout
+    │   └── AdminLayout.astro# Sidebar admin interface layout
     │
     ├── components/
-    │   ├── PostCard.astro          Feed post card + hidden admin ⋯ menu
+    │   ├── PostCard.astro          # Feed post card & contextual admin options
     │   ├── feed/
-    │   │   ├── Sidebar.astro       Left navigation sidebar
-    │   │   ├── PostComposer.astro  Write a post (char counter + cooldown)
-    │   │   └── RightPanel.astro    News snippets + posting rules
+    │   │   ├── Sidebar.astro       # Navigation sidebar
+    │   │   ├── PostComposer.astro  # Post creation (char counter + rate limiting)
+    │   │   └── RightPanel.astro    # News snippets & community guidelines
     │   └── admin/
-    │       ├── StatCard.astro      Coloured metric tile
-    │       ├── UsersTable.astro    Manage users (promote/demote/ban)
-    │       ├── PostsTable.astro    Manage posts (delete/flag/edit)
-    │       └── ActivityLog.astro   Audit trail
+    │       ├── StatCard.astro      # Analytics metric tile
+    │       ├── UsersTable.astro    # User management (roles, bans, search)
+    │       ├── PostsTable.astro    # Content moderation (delete, flag, edit)
+    │       └── ActivityLog.astro   # System audit log trail
     │
     └── pages/
-        ├── index.astro             / — public landing page
-        ├── login.astro             /login
-        ├── signup.astro            /signup
-        ├── feed.astro              /feed (protected)
-        ├── resources.astro         /resources (protected)
-        ├── news.astro              /news (protected)
-        ├── 404.astro               404 page
+        ├── index.astro             # Landing page
+        ├── login.astro             # Sign-in page
+        ├── signup.astro            # Registration page
+        ├── feed.astro              # Main campus feed (protected)
+        ├── resources.astro         # Student resource sharing (protected)
+        ├── news.astro              # Official campus news feed (protected)
+        ├── 404.astro               # Custom 404 page
         ├── profile/
-        │   └── [username].astro    /profile/:username
+        │   └── [username].astro    # User profile & posts (/profile/:username)
         ├── admin/
-        │   └── index.astro         /admin (admin only)
+        │   └── index.astro         # Admin Dashboard (/admin)
         └── api/
-            ├── posts.ts            POST /api/posts
-            ├── likes.ts            POST /api/likes
-            ├── resources.ts        POST /api/resources
+            ├── posts.ts            # POST /api/posts
+            ├── likes.ts            # POST /api/likes
+            ├── resources.ts        # POST /api/resources
             ├── auth/
-            │   └── signout.ts      POST /api/auth/signout
+            │   ├── signin.ts       # POST /api/auth/signin
+            │   ├── signup.ts       # POST /api/auth/signup
+            │   └── signout.ts      # POST /api/auth/signout
             └── admin/
-                ├── post.ts         POST /api/admin/post
-                ├── user.ts         POST /api/admin/user
-                └── content.ts      POST /api/admin/content
+                ├── post.ts         # Moderation RPC endpoints
+                ├── user.ts         # User management endpoints
+                └── content.ts      # Content management endpoints
 ```
 
 ---
 
-## CSS Design System
+## 🎨 CSS Design System
 
-All styles live in `src/styles/global.css` — no Tailwind, no dependencies.
+All styles live in `src/styles/global.css` — built with zero CSS frameworks or heavy external dependencies.
 
-### CSS custom properties (tokens)
+### CSS Custom Properties (Tokens)
 ```css
---bg, --bg-2, --bg-3          /* background surfaces */
+--bg, --bg-2, --bg-3          /* Surface & background levels */
 --border, --border-2, --border-3
---text, --text-2, --text-3    /* primary / muted / hint */
+--text, --text-2, --text-3    /* High-contrast, muted, and subtle text */
 --accent, --accent-bg, --accent-text
 --font, --font-mono
 --radius-sm/md/lg/xl/full
 ```
-Dark mode is handled automatically via `@media (prefers-color-scheme: dark)`.
+*Automatic dark mode is enabled via `@media (prefers-color-scheme: dark)`.*
 
-### Component classes
+### Key UI Component Classes
 | Class | Usage |
 |---|---|
 | `.btn`, `.btn-primary`, `.btn-secondary`, `.btn-ghost`, `.btn-danger` | Buttons |
-| `.btn-sm`, `.btn-xs` | Button size modifiers |
-| `.input` | Text input, textarea, select |
-| `.label` | Form field label |
-| `.card` | White surface card with border |
-| `.badge`, `.badge-ok`, `.badge-warn`, `.badge-danger`, `.badge-info`, `.badge-gray` | Status badges |
-| `.avatar`, `.avatar-sm/md/lg/xl` | Avatar circles |
-| `.nav-item`, `.nav-item.active` | Sidebar nav links |
-| `.alert`, `.alert-danger`, `.alert-success`, `.alert-warn` | Alert boxes |
-| `.modal-overlay`, `.modal-box` | Modal dialogs |
-| `.page-header`, `.page-title` | Sticky page headers |
-| `.data-table` | Admin data tables |
-| `.tbl-btn`, `.tbl-btn.promote/demote/ban/delete/edit` | Table action buttons |
-| `.empty-state` | Empty content placeholder |
-| `.pulse-id` | Monospace Pulse ID chip |
-| `.logo-mark` | UP brand mark |
-| `.muted`, `.hint` | Text helpers |
+| `.btn-sm`, `.btn-xs` | Button sizing modifiers |
+| `.input` | Form text fields, textareas, and selects |
+| `.label` | Form labels |
+| `.card` | Surface card container |
+| `.badge`, `.badge-ok`, `.badge-warn`, `.badge-danger`, `.badge-info` | Status chips & pills |
+| `.avatar`, `.avatar-sm/md/lg/xl` | User avatar containers |
+| `.nav-item`, `.nav-item.active` | Sidebar navigation links |
+| `.alert`, `.alert-danger`, `.alert-success`, `.alert-warn` | System feedback alerts |
+| `.modal-overlay`, `.modal-box` | Dialog overlays |
+| `.data-table` | Responsive administrative tables |
+| `.pulse-id` | Monospace Pulse ID tag |
 
 ---
 
-## Features
+## ✨ Features & Architecture
 
 | Feature | Detail |
 |---|---|
-| Auth | Username / Email / Pulse ID login, auto-detected |
-| Pulse ID | Auto-generated `UP-XXXXXX`, permanent |
-| Feed | 280-char posts, reverse chronological |
-| Rate limiting | 5 posts/day · 15-min cooldown · live countdown |
-| Likes | Toggle, optimistic UI update |
-| Resources | Upload links/files |
-| Campus News | Admin-only posting |
-| Admin Dashboard | 5 tabs: Overview · Users · Posts · Content · Audit Log |
-| Admin post menu | Hidden `⋯` per post for admins (flag / edit / delete) |
-| Audit Log | Every admin action recorded permanently |
-| Security | Middleware + API guard + RLS + SECURITY DEFINER functions |
-| Dark mode | `@media (prefers-color-scheme: dark)` — fully automatic |
-| Responsive | 3-column desktop → 1-column + bottom nav on mobile |
+| **Architecture** | Astro SSR frontend connected via RPC to an Express + SQLite backend microservice |
+| **Authentication** | Sign in with Email, Username, or auto-generated **Pulse ID** (`UP-XXXXXX`) |
+| **Security & API Auth** | Protected RPC endpoints secured with internal API key header (`x-api-key`) |
+| **Campus Feed** | Real-time reverse chronological feed with media upload support |
+| **Posting Guard** | Built-in character counter (280 max) & rate limiting (5 posts/day, 15-min cooldown) |
+| **Engagements** | Optimistic like toggles & comment threads |
+| **Resource Hub** | Campus resource and link directory |
+| **Campus News** | Official updates posted exclusively by platform admins |
+| **Admin Dashboard** | Full-featured moderation dashboard with real-time stats, user management, post actions, and immutable audit logging |
+| **CLI Admin Tool** | Simple command `npx tsx make-admin.ts <username>` for local admin elevation |
+| **Theme** | Automatic Dark/Light mode switching based on system preferences |
 
 ---
 
-## Deployment
+## 🛠️ Tech Stack
 
-### Vercel
-```bash
-npm install @astrojs/vercel
-```
-Update `astro.config.mjs`:
-```js
-import vercel from '@astrojs/vercel/serverless';
-export default defineConfig({ output: 'server', adapter: vercel(), integrations: [react()] });
-```
+- **Frontend Framework**: [Astro 5](https://astro.build/) (Server-Side Rendering)
+- **Backend Server**: Express.js (Node.js 20+) RPC server
+- **Database**: [SQLite](https://sqlite.org/) via `better-sqlite3`
+- **Styling**: Modern Vanilla CSS Design System with custom property tokens
+- **TypeScript**: Strict type definitions for end-to-end type safety
 
-### Cloudflare Pages
-```bash
-npm install @astrojs/cloudflare
-```
-```js
-import cloudflare from '@astrojs/cloudflare';
-export default defineConfig({ output: 'server', adapter: cloudflare(), integrations: [react()] });
-```
+---
+
+## 📄 License
+
+MIT License
+

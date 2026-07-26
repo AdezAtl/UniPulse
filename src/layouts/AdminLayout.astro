@@ -63,9 +63,43 @@ const nav = [
     </aside>
     <div class="admin-main"><slot /></div>
   </div>
+  <div id="toast-container" class="toast-container"></div>
 </BaseLayout>
 
 <script>
+  // Global Toast function
+  (window as any).showToast = function(message: string, type: string = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+
+    let icon = '⚡';
+    if (message.toLowerCase().includes('success') || message.toLowerCase().includes('copied') || message.toLowerCase().includes('posted')) {
+      icon = '✓';
+    } else if (message.toLowerCase().includes('fail') || message.toLowerCase().includes('error')) {
+      icon = '⚠️';
+    }
+
+    toast.innerHTML = `<span class="toast-icon">${icon}</span><span>${message}</span>`;
+    container.appendChild(toast);
+    
+    // Trigger reflow
+    toast.offsetHeight;
+    toast.classList.add('show');
+    
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 3200);
+  };
+
+  const pendingToast = sessionStorage.getItem('showToast');
+  if (pendingToast) {
+    (window as any).showToast(pendingToast);
+    sessionStorage.removeItem('showToast');
+  }
+
   const adminThemeToggle = document.getElementById('admin-theme-toggle');
   const adminSunIcon = document.querySelector('.admin-sun-icon') as HTMLElement;
   const adminMoonIcon = document.querySelector('.admin-moon-icon') as HTMLElement;
