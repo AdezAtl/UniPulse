@@ -322,6 +322,11 @@ const { title, activeNav = 'feed', user, showRightPanel = true } = Astro.props;
         // Update all buttons following this user
         document.querySelectorAll(`.follow-btn[data-user-id="${followingId}"]`).forEach(b => {
           b.textContent = following ? "Following" : "Follow +";
+          if (following) {
+            b.classList.add('following');
+          } else {
+            b.classList.remove('following');
+          }
         });
         if (typeof (window as any).showToast === 'function') {
           (window as any).showToast(

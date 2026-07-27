@@ -1,14 +1,14 @@
 ---
-import { getEvents, getRegisteredEvents, getAllUsers, getFollowingIds } from "../../lib/db";
+import { getEvents, getAllUsers, getFollowingIds } from "../../lib/db";
 
 const user = Astro.locals.user!;
 const events = (await getEvents()).slice(0, 4);
 const allUsers = await getAllUsers();
-const followingIds = await getFollowingIds(user.id);
+const followingIds = user ? await getFollowingIds(user.id) : new Set<string>();
 
 // Get suggestions: not self, not followed, not banned, limit 3
 const suggestions = allUsers
-  .filter(u => u.id !== user.id && !followingIds.has(u.id) && !u.is_banned)
+  .filter(u => user?.id && String(u.id) !== String(user.id) && !followingIds.has(u.id) && !u.is_banned)
   .slice(0, 3);
 ---
 
@@ -50,20 +50,20 @@ const suggestions = allUsers
       <div class="suggestions-list">
         {suggestions.map(u => (
           <div class="suggest-item">
-            <div class="flex items-center gap-2">
-              <div class="avatar avatar-sm">
+            <a href={`/profile/${u.username}`} class="flex items-center gap-2" style="text-decoration: none; color: inherit; overflow: hidden;">
+              <div class="avatar avatar-sm flex-shrink-0">
                 {u.avatar_url ? (
                   <img src={u.avatar_url} alt="" />
                 ) : (
                   <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.username}`} alt="" />
                 )}
               </div>
-              <div>
-                <div class="cell-name" style="font-size: 0.8125rem; font-weight: 600; color: var(--text-1)">{u.full_name || u.username}</div>
-                <div class="cell-username" style="font-size: 0.7rem; color: var(--text-3)">@{u.username}</div>
+              <div style="min-width: 0;">
+                <div class="cell-name" style="font-size: 0.8125rem; font-weight: 600; color: var(--text-1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{u.full_name || u.username}</div>
+                <div class="cell-username" style="font-size: 0.7rem; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">@{u.username}</div>
               </div>
-            </div>
-            <button class="suggest-btn follow-btn" data-user-id={u.id}>Follow</button>
+            </a>
+            <button class="suggest-btn follow-btn" data-user-id={u.id}>Follow +</button>
           </div>
         ))}
       </div>
@@ -107,6 +107,35 @@ const suggestions = allUsers
     color: var(--text-2);
     text-align: center;
     padding: 1rem 0;
+  }
+  .suggest-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    gap: 0.5rem;
+  }
+  .suggest-btn {
+    background: var(--accent);
+    color: #ffffff;
+    border: none;
+    padding: 0.35rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .suggest-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+  .suggest-btn.following {
+    background: var(--bg-3);
+    color: var(--text-2);
+    border: 1px solid var(--border);
   }
   .recent-section {
     margin-top: 1.5rem;

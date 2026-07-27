@@ -22,6 +22,9 @@ const {
   isAdmin,
   currentUserId,
 } = Astro.props as Props;
+
+const authorId = post.author_id || post.user_id;
+const isSelf = Boolean(authorId && currentUserId && String(authorId) === String(currentUserId));
 ---
 
 <article
@@ -36,12 +39,15 @@ const {
             post.avatar_url ? (
               <img src={post.avatar_url} alt="" />
             ) : (
-              post.username.charAt(0).toUpperCase()
+              <img
+                src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${post.username}`}
+                alt=""
+              />
             )
           }
         </div>
       </a>
-      <div class="post-meta-text">
+      <div>
         <span class="post-dept"
           >s/{
             post.department.toLowerCase().replace(/[^a-z0-9]/g, "") || "general"
@@ -56,10 +62,10 @@ const {
 
     <div class="post-header-right">
       {
-        post.author_id !== currentUserId && (
+        !isSelf && (
           <button
-            class="btn btn-primary btn-xs follow-btn"
-            data-user-id={post.author_id}
+            class={`btn btn-primary btn-xs follow-btn ${isFollowing ? 'following' : ''}`}
+            data-user-id={authorId}
           >
             {isFollowing ? "Following" : "Follow +"}
           </button>
@@ -67,7 +73,7 @@ const {
       }
 
       {
-        (isAdmin || post.author_id === currentUserId) && (
+        (isAdmin || isSelf) && (
           <div class="admin-menu">
             <button
               class="admin-trigger"

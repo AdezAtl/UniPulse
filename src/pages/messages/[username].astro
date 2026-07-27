@@ -84,11 +84,17 @@ const messages = await getMessages(user.id, otherUser.id);
     const content = input.value.trim();
     if (!content) return;
 
+    input.value = '';
+
+    let tempBubble: HTMLElement | null = null;
+    let wrapper: HTMLElement | null = null;
+
     // Optimistic UI update
     if (messagesContainer) {
-      const wrapper = document.createElement('div');
+      wrapper = document.createElement('div');
       wrapper.className = 'msg-wrapper';
       wrapper.innerHTML = `<div class="msg-bubble mine" style="opacity: 0.7">${content}</div>`;
+      tempBubble = wrapper.querySelector('.msg-bubble');
       
       const emptyState = messagesContainer.querySelector('.empty-state');
       if (emptyState) emptyState.remove();
@@ -97,21 +103,28 @@ const messages = await getMessages(user.id, otherUser.id);
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
-    input.value = '';
-    
-    const res = await fetch('/api/messages/send', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ receiverUsername: receiver.value, content })
-    });
+    try {
+      const res = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ receiverUsername: receiver.value, content })
+      });
 
-    if (!res.ok) {
-      alert('Failed to send message');
-      window.location.reload();
-    } else {
-      // Reload or just mark optimistic message as sent
-      // For simplicity in offline mode with sync SQLite, a reload ensures everything is in sync
-      window.location.reload();
+      if (!res.ok) {
+        if (wrapper) wrapper.remove();
+        if (typeof (window as any).showToast === 'function') {
+          (window as any).showToast('Failed to send message');
+        } else {
+          alert('Failed to send message');
+        }
+      } else {
+        if (tempBubble) tempBubble.style.opacity = '1';
+      }
+    } catch (err) {
+      if (wrapper) wrapper.remove();
+      if (typeof (window as any).showToast === 'function') {
+        (window as any).showToast('Network error sending message');
+      }
     }
   });
 </script>

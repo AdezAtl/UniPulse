@@ -205,7 +205,10 @@ export async function createSession(userId: string): Promise<string> {
 export async function getSessionUser(token: string): Promise<User | null> {
   const rs = await turso.execute({
     sql: `
-      SELECT s.*, u.*
+      SELECT
+        u.id, u.email, u.username, u.pulse_id, u.full_name,
+        u.department, u.level, u.avatar_url, u.role, u.is_banned,
+        u.created_at, s.last_active
       FROM sessions s
       JOIN users u ON u.id = s.user_id
       WHERE s.token = ?
